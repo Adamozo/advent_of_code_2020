@@ -1,0 +1,14 @@
+binop_separator = "Front"
+empty_item_single_line = true
+fn_args_layout = "Tall"
+fn_single_line = false
+force_multiline_blocks = false
+indent_style = "Block"
+match_block_trailing_comma = true
+reorder_impl_items = true
+reorder_imports = true
+reorder_modules = true
+space_after_colon = true
+use_try_shorthand = true
+where_single_line = false
+struct_field_align_threshold = 20
