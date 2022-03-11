@@ -49,4 +49,7 @@ impl FromStr for Password{
 pub fn run() {
     let p1 = Password::from_str("1-3 a: abcde").unwrap();
     assert_eq!(true, Password::is_valid(&p1));
+
+    let p2 = Password::from_str("2-3 a: abcde").unwrap();
+    assert_eq!(false, Password::is_valid(&p2));
 }
