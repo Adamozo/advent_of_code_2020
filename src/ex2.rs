@@ -42,7 +42,7 @@ impl FromStr for Password {
 
     }
 }
-// pub fn run() -> Result<Password, String>{
+
 pub fn run(){
      let p1  = "1-3 a: abcde".parse::<Password>().unwrap();
      match p1 {
