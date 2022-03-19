@@ -29,12 +29,19 @@ impl FromStr for Password {
         let re: &Lazy<Regex> = regex!(r"(?P<min>\d+)-(?P<max>\d+) (?P<checked_char>\w{1}): (?P<passwd>\w+)");
         let caps = re.captures(s);
 
+        // match re.captures(s){
+        //     Some(r) =>{
+
+        //     },
+        //     Err(r) => Err("unable to capture".to_string())
+        // }
+
         if let Some(r) = caps {
             Ok(Password {
-                min_number: r[1].parse::<u16>().unwrap(),
-                max_number: r[2].parse::<u16>().unwrap(),
-                checked_char: r[3].chars().next().unwrap(),
-                passwd: r[4].to_string(),
+                min_number: (&r["min"]).parse::<u16>().unwrap(),
+                max_number: (&r["max"]).parse::<u16>().unwrap(),
+                checked_char: (&r["checked_char"]).chars().next().unwrap(),
+                passwd: (&r["passwd"]).to_string(),
             })
         } else {
             Err("unable to capture".to_string())
