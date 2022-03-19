@@ -14,17 +14,14 @@ pub struct Password {
     passwd: String,
 }
 
+#[derive(PartialEq)]
 #[derive(Error, Debug)]
 pub enum PasswordError {
+
     #[error("data store disconnected")]
     CaptureFailed,
-
-    #[error("Read error")]
-    ReadError { source: std::io::Error },
-
-    #[error(transparent)]
-    IOError(#[from] std::io::Error),
 }
+
 
 impl Password {
     pub fn is_valid(&self) -> bool {
@@ -67,7 +64,7 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn run(path: String) -> Result<(), PasswordError>{
+pub fn run(path: String) -> Result<(), io::Error>{
     match read_lines(path){
         Ok(lines) => {
             for line in lines {
@@ -79,12 +76,12 @@ pub fn run(path: String) -> Result<(), PasswordError>{
                 }
     
                 else{
-                    return Err(PasswordError::IOError(io::Error::from_raw_os_error(3)))
+                    return Err(io::Error::from_raw_os_error(3))
                 }
             }
             Ok(())
         },
-        Err(msg) => Err(PasswordError::IOError(msg)),
+        Err(msg) => Err(msg),
     }
  }
 
@@ -96,11 +93,11 @@ mod tests {
     #[test_case("1-3 a: abcde" => Ok(Password{min_number: 1, max_number: 3, checked_char: 'a', passwd: "abcde".to_string()}); "valid webiste 1")]
     #[test_case("1-3 b: cdefg" => Ok(Password{min_number: 1, max_number: 3, checked_char: 'b', passwd: "cdefg".to_string()}); "valid website 2")]
     #[test_case("2-9 c: ccccccccc" => Ok(Password{min_number: 2, max_number: 9, checked_char: 'c', passwd: "ccccccccc".to_string()}); "valid website 3")]
-    #[test_case("1-c a: abcde" => Err("unable to capture".to_string()); "invalid letter as max_number")]
-    #[test_case("c-3 a: abcde" => Err("unable to capture".to_string()); "invalid letter as min_number")]
+    #[test_case("1-c a: abcde" => Err(PasswordError::CaptureFailed); "invalid letter as max_number")]
+    #[test_case("c-3 a: abcde" => Err(PasswordError::CaptureFailed); "invalid letter as min_number")]
     #[test_case("1-3 1: abcde" => Ok(Password{min_number: 1, max_number: 3, checked_char: '1', passwd: "abcde".to_string()}); "valid num as checked char")]
-    #[test_case("1-3 a: " => Err("unable to capture".to_string()); "invalid lack of password")]
-    fn test_from_str(s: &str) -> Result<Password, String>{
+    #[test_case("1-3 a: " => Err(PasswordError::CaptureFailed); "invalid lack of password")]
+    fn test_from_str(s: &str) -> Result<Password, PasswordError>{
         Password::from_str(s)
     }
 
