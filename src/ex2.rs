@@ -1,61 +1,58 @@
+use lazy_regex::{regex, Lazy, Regex};
 use std::str::FromStr;
-use std::num::ParseIntError;
-use std::string::ParseError;
-use lazy_regex::regex;
+use test_case::test_case;
 
-pub struct Password{
+pub struct Password {
     min_number: u16,
     max_number: u16,
     checked_char: char,
     passwd: String,
 }
 
-impl Password{
+impl Password {
     pub fn is_valid(&self) -> bool {
-        let counter: u16 = self.passwd.chars().into_iter().filter(|c| c == &self.checked_char).count().try_into().unwrap();
-    
+        let counter: u16 = self
+            .passwd
+            .chars()
+            .filter(|c| *c == self.checked_char)
+            .count() as u16;
+
         (self.min_number..=self.max_number).contains(&counter)
-    } 
-
-}
-
-enum PasswordError{
-    ParseIntError,
-    ParseError,
-    Infallible
-}
-
-
-impl FromStr for Password{
-    type Err = ParseIntError;
-    // 1-3 a: abcde
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re = regex!(r"(\d+)-(\d+) (\w{1}): (\w+)");
-        let caps = re.captures(s);
-
-        match caps {
-            Some(r) => {        
-                let min = r.get(1).map_or("", |m| m.as_str()).parse::<u16>()?;
-                let max = r.get(2).map_or("", |m| m.as_str()).parse::<u16>()?;
-                let c = match r.get(3).map_or("", |m| m.as_str()).chars().next() {
-                    Some(r) => r,
-                    None => panic!()
-                };
-
-                let password = r.get(4).map_or("", |m| m.as_str());
-
-                Ok(Password { min_number: min, max_number: max, checked_char: c,  passwd: password.to_string()})
-            },
-            None => panic!()
-        }        
     }
 }
 
-pub fn run() {
-    let p1 = Password::from_str("1--3 a: abcde");
-    match p1 {
-        Ok(r) => println!("{:?} {:?} {:?} {:?}", r.min_number, r.max_number, r.checked_char, r.passwd),
-        Err(r) => println!(" error {:?}", r),
-        _ => println!("missmatch")
-    }       
+impl FromStr for Password {
+    type Err = String;
+    // 1-3 a: abcde
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let re: &Lazy<Regex> = regex!(r"(?P<min>\d+)-(?P<max>\d+) (?P<checked_char>\w{1}): (?P<passwd>\w+)");
+        let caps = re.captures(s);
+
+        if let Some(r) = caps {
+            Ok(Password {
+                min_number: r[1].parse::<u16>().unwrap(),
+                max_number: r[2].parse::<u16>().unwrap(),
+                checked_char: r[3].chars().next().unwrap(),
+                passwd: r[4].to_string(),
+            })
+        } else {
+            Err("unable to capture".to_string())
+        }
+        
+
+    }
 }
+// pub fn run() -> Result<Password, String>{
+pub fn run(){
+     let p1  = "1-3 a: abcde".parse::<Password>().unwrap();
+     match p1 {
+        r => {
+                         println!(
+                 "{:?} {:?} {:?} {:?}",
+                                  r.min_number, r.max_number, r.checked_char, r.passwd
+             );
+             println!("is_valid: {:?}", true);
+         }
+        _ => println!(" error")
+     }
+ }
