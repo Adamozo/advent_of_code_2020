@@ -1,5 +1,8 @@
 use lazy_regex::{regex, Lazy, Regex};
 use std::str::FromStr;
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -24,17 +27,11 @@ impl Password {
 
 impl FromStr for Password {
     type Err = String;
+
     // 1-3 a: abcde
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re: &Lazy<Regex> = regex!(r"(?P<min>\d+)-(?P<max>\d+) (?P<checked_char>\w{1}): (?P<passwd>\w+)");
         let caps = re.captures(s);
-
-        // match re.captures(s){
-        //     Some(r) =>{
-
-        //     },
-        //     Err(r) => Err("unable to capture".to_string())
-        // }
 
         if let Some(r) = caps {
             Ok(Password {
@@ -51,18 +48,33 @@ impl FromStr for Password {
     }
 }
 
-pub fn run(){
-     let p1  = "1-3 a: abcde".parse::<Password>().unwrap();
-     match p1 {
-        r => {
-                         println!(
-                 "{:?} {:?} {:?} {:?}",
-                                  r.min_number, r.max_number, r.checked_char, r.passwd
-             );
-             println!("is_valid: {:?}", true);
-         }
-        _ => println!(" error")
-     }
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where P: AsRef<Path>, {
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
+pub fn run() -> Result<(), io::Error>{
+    let path = Path::new("ddata_files/ex2_passwords.txt");
+
+    match read_lines(path){
+        Ok(lines) => {
+            for line in lines {
+                if let Ok(p) = line {
+                    match Password::from_str(&p){
+                        Ok(o) => println!{"{:?}", Password::is_valid(&o)},
+                        Err(o) => println!{"{:?}", o}
+                    };
+                }
+    
+                else{
+                    return Err(io::Error::from_raw_os_error(3))
+                }
+            }
+            Ok(())
+        },
+        Err(msg) => Err(msg),
+    }
  }
 
 #[cfg(test)]
