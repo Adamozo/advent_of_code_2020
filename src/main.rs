@@ -5,9 +5,13 @@ use std::process;
 
 
 fn main() {
-    if let Err(err) = ex2::run() {
+    if let Err(err) = ex2::run("data_files/ex2_passwords.txt".to_string()) {
         eprintln!("Error: {:?}", err);
-        //process::exit(1);
+        process::exit(1);
+    }
+
+    else{
+        process::exit(0);
     }
 }
 

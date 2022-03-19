@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use thiserror::Error;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -11,6 +12,18 @@ pub struct Password {
     max_number: u16,
     checked_char: char,
     passwd: String,
+}
+
+#[derive(Error, Debug)]
+pub enum PasswordError {
+    #[error("data store disconnected")]
+    CaptureFailed,
+
+    #[error("Read error")]
+    ReadError { source: std::io::Error },
+
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
 }
 
 impl Password {
@@ -26,7 +39,7 @@ impl Password {
 }
 
 impl FromStr for Password {
-    type Err = String;
+    type Err = PasswordError;
 
     // 1-3 a: abcde
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -41,7 +54,7 @@ impl FromStr for Password {
                 passwd: (&r["passwd"]).to_string(),
             })
         } else {
-            Err("unable to capture".to_string())
+            Err(PasswordError::CaptureFailed)
         }
         
 
@@ -54,26 +67,24 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn run() -> Result<(), io::Error>{
-    let path = Path::new("ddata_files/ex2_passwords.txt");
-
+pub fn run(path: String) -> Result<(), PasswordError>{
     match read_lines(path){
         Ok(lines) => {
             for line in lines {
                 if let Ok(p) = line {
                     match Password::from_str(&p){
-                        Ok(o) => println!{"{:?}", Password::is_valid(&o)},
-                        Err(o) => println!{"{:?}", o}
+                        Ok(o) => println!{"{:?}: is_valid == {:?}", p, Password::is_valid(&o)},
+                        Err(o) => println!{"{:?} {:?}", p, o}
                     };
                 }
     
                 else{
-                    return Err(io::Error::from_raw_os_error(3))
+                    return Err(PasswordError::IOError(io::Error::from_raw_os_error(3)))
                 }
             }
             Ok(())
         },
-        Err(msg) => Err(msg),
+        Err(msg) => Err(PasswordError::IOError(msg)),
     }
  }
 
