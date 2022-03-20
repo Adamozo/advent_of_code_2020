@@ -1,5 +1,18 @@
-mod ex1;
+mod ex2;
+//mod ex1;
+use std::process;
+
+
 
 fn main() {
-    println!("{:?}", ex1::check_sum(&[1721, 979, 366, 299, 675, 1456], &2020));
+    if let Err(err) = ex2::run("data_files/ex2_passwords.txt".to_string()) {
+        eprintln!("Error: {:?}", err);
+        process::exit(1);
+    }
+
+    else{
+        process::exit(0);
+    }
 }
+
+
