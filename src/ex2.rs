@@ -75,7 +75,7 @@ pub fn run(path: String) -> Result<(), io::Error> {
                 }
             }
             Ok(())
-        },
+        }
         Err(msg) => Err(msg),
     }
 }
