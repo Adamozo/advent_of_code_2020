@@ -1,12 +1,11 @@
 use lazy_regex::{regex, Lazy, Regex};
-use std::str::FromStr;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::str::FromStr;
 use thiserror::Error;
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Password {
     min_number: u16,
     max_number: u16,
@@ -16,11 +15,9 @@ pub struct Password {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum PasswordError {
-
     #[error("data store disconnected")]
     CaptureFailed,
 }
-
 
 impl Password {
     pub fn is_valid(&self) -> bool {
@@ -39,7 +36,8 @@ impl FromStr for Password {
 
     // 1-3 a: abcde
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let re: &Lazy<Regex> = regex!(r"(?P<min>\d+)-(?P<max>\d+) (?P<checked_char>\w{1}): (?P<passwd>\w+)");
+        let re: &Lazy<Regex> =
+            regex!(r"(?P<min>\d+)-(?P<max>\d+) (?P<checked_char>\w{1}): (?P<passwd>\w+)");
         let caps = re.captures(s);
 
         if let Some(r) = caps {
@@ -52,37 +50,35 @@ impl FromStr for Password {
         } else {
             Err(PasswordError::CaptureFailed)
         }
-        
-
     }
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
+where
+    P: AsRef<Path>,
+{
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn run(path: String) -> Result<(), io::Error>{
-    match read_lines(path){
+pub fn run(path: String) -> Result<(), io::Error> {
+    match read_lines(path) {
         Ok(lines) => {
             for line in lines {
                 if let Ok(p) = line {
-                    match Password::from_str(&p){
-                        Ok(o) => println!{"{:?}: is_valid == {:?}", p, Password::is_valid(&o)},
-                        Err(o) => println!{"{:?} {:?}", p, o}
+                    match Password::from_str(&p) {
+                        Ok(o) => println! {"{:?}: is_valid == {:?}", p, Password::is_valid(&o)},
+                        Err(o) => println! {"{:?} {:?}", p, o},
                     };
-                }
-    
-                else{
-                    return Err(io::Error::from_raw_os_error(3))
+                } else {
+                    return Err(io::Error::from_raw_os_error(3));
                 }
             }
             Ok(())
         },
         Err(msg) => Err(msg),
     }
- }
+}
 
 #[cfg(test)]
 mod tests {
@@ -96,22 +92,21 @@ mod tests {
     #[test_case("c-3 a: abcde" => Err(PasswordError::CaptureFailed); "invalid letter as min_number")]
     #[test_case("1-3 1: abcde" => Ok(Password{min_number: 1, max_number: 3, checked_char: '1', passwd: "abcde".to_string()}); "valid num as checked char")]
     #[test_case("1-3 a: " => Err(PasswordError::CaptureFailed); "invalid lack of password")]
-    fn test_from_str(s: &str) -> Result<Password, PasswordError>{
+    fn test_from_str(s: &str) -> Result<Password, PasswordError> {
         Password::from_str(s)
     }
-
 
     #[test_case("1-3 a: abcde" => true ; "valid 1-3 a: abcde")]
     #[test_case("1-3 b: cdefg" =>  false  ; "invalid 1-3 b: cdefg")]
     #[test_case("2-9 c: ccccccccc" =>  true  ; "valid 2-9 c: ccccccccc")]
     #[test_case("3-1 a: abcde" => false ; "invalid 3-1 a: abcde")]
-    fn test_is_valid(s: &str) -> bool{
+    fn test_is_valid(s: &str) -> bool {
         let p1 = Password::from_str(s).unwrap();
         Password::is_valid(&p1)
     }
 
     #[test]
-    fn test_run_no_file(){
+    fn test_run_no_file() {
         assert!(run("aaa".to_string()).is_err())
     }
 }
