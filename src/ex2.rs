@@ -15,7 +15,7 @@ pub struct Password {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum PasswordError {
-    #[error("data store disconnected")]
+    #[error("unable to capture password")]
     CaptureFailed,
 }
 
@@ -61,23 +61,19 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn run(path: String) -> Result<(), io::Error> {
-    match read_lines(path) {
-        Ok(lines) => {
-            for line in lines {
-                if let Ok(p) = line {
-                    match Password::from_str(&p) {
-                        Ok(o) => println! {"{:?}: is_valid == {:?}", p, Password::is_valid(&o)},
-                        Err(o) => println! {"{:?} {:?}", p, o},
-                    };
-                } else {
-                    return Err(io::Error::from_raw_os_error(3));
-                }
-            }
-            Ok(())
+pub fn run<P>(path: P) -> io::Result<()> 
+where 
+    P: AsRef<Path>,
+{
+    for line in read_lines(path)?{
+        let line = line?;
+        match line.parse::<Password>(){
+            Ok(p) => println!("{:?}: is_valid == {}", line, p.is_valid()),
+            Err(err) => eprintln! {"{:?} -> Error: {}", line, err},
         }
-        Err(msg) => Err(msg),
     }
+    
+    Ok(())
 }
 
 #[cfg(test)]
@@ -93,20 +89,27 @@ mod tests {
     #[test_case("1-3 1: abcde" => Ok(Password{min_number: 1, max_number: 3, checked_char: '1', passwd: "abcde".to_string()}); "valid num as checked char")]
     #[test_case("1-3 a: " => Err(PasswordError::CaptureFailed); "invalid lack of password")]
     fn test_from_str(s: &str) -> Result<Password, PasswordError> {
-        Password::from_str(s)
+        s.parse::<Password>()
     }
 
-    #[test_case("1-3 a: abcde" => true ; "valid 1-3 a: abcde")]
-    #[test_case("1-3 b: cdefg" =>  false  ; "invalid 1-3 b: cdefg")]
-    #[test_case("2-9 c: ccccccccc" =>  true  ; "valid 2-9 c: ccccccccc")]
-    #[test_case("3-1 a: abcde" => false ; "invalid 3-1 a: abcde")]
-    fn test_is_valid(s: &str) -> bool {
-        let p1 = Password::from_str(s).unwrap();
-        Password::is_valid(&p1)
+    #[test_case("1-3 a: abcde" => Ok(true) ; "valid 1-3 a: abcde")]
+    #[test_case("1-3 b: cdefg" =>  Ok(false)  ; "invalid 1-3 b: cdefg")]
+    #[test_case("2-9 c: ccccccccc" =>  Ok(true)  ; "valid 2-9 c: ccccccccc")]
+    #[test_case("3-1 a: abcde" => Ok(false) ; "invalid 3-1 a: abcde")]
+    #[test_case("1-c a: abcde" => Err(PasswordError::CaptureFailed); "invalid letter as max_number")]
+    #[test_case("c-3 a: abcde" => Err(PasswordError::CaptureFailed); "invalid letter as min_number")]
+    fn test_is_valid(s: &str) -> Result<bool, PasswordError> {
+        let p1 = s.parse::<Password>()?;
+        Ok(p1.is_valid())
     }
 
     #[test]
     fn test_run_no_file() {
-        assert!(run("aaa".to_string()).is_err())
+        assert!(run("aaa").is_err())
+    }
+
+    #[test]
+    fn test_run_file_exists() {
+        assert!(run("data_files/ex2_passwords.txt").is_err() == false)
     }
 }

@@ -1,12 +1,8 @@
 mod ex2;
 //mod ex1;
-use std::process;
+use anyhow::{Context, Result};
 
-fn main() {
-    if let Err(err) = ex2::run("data_files/ex2_passwords.txt".to_string()) {
-        eprintln!("Error: {:?}", err);
-        process::exit(1);
-    } else {
-        process::exit(0);
-    }
+fn main() -> Result<()>{
+    let filename = "data_files/ex2_passwords.txt";
+    ex2::run(filename).with_context(|| format!("Failed to read data from {}", filename))
 }
