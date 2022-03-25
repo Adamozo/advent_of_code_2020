@@ -14,8 +14,7 @@ pub struct Password {
     passwd: String,
 }
 
-#[derive(PartialEq)]
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum PasswordError {
 
     #[error("data store disconnected")]
@@ -109,5 +108,10 @@ mod tests {
     fn test_is_valid(s: &str) -> bool{
         let p1 = Password::from_str(s).unwrap();
         Password::is_valid(&p1)
+    }
+
+    #[test]
+    fn test_run_no_file(){
+        assert!(run("aaa".to_string()).is_err())
     }
 }
