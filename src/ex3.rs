@@ -6,7 +6,7 @@ use thiserror::Error;
 #[derive(Error, Debug, PartialEq)]
 pub enum Ex3Error {
     #[error("not allowed char occured")]
-    InvalidChars,
+    InvalidChar,
 
     #[error("unacceptable line len")]
     WrongLen,
@@ -33,13 +33,13 @@ fn process_line(line: &str, expexted_len: usize) -> Result<String, Ex3Error> {
 
     // check if unexpected chars occured
     if cuted.chars().filter(|c| *c != '.' && *c != '#').count() > 0 {
-        return Err(Ex3Error::InvalidChars);
+        return Err(Ex3Error::InvalidChar);
     }
 
     Ok(cuted.to_string())
 }
 
-pub fn count_trees<P>(path: P) -> io::Result<u32>
+fn count_trees<P>(path: P, board_width: usize, board_height: usize, step: usize) -> io::Result<u32>
 where
     P: AsRef<Path>,
 {
@@ -47,10 +47,6 @@ where
     let mut skip_to_line: usize = 0;
     let mut trees_num: u32 = 0;
     let mut curr_line: usize = 0;
-
-    let board_width: usize = 11;
-    let board_height: usize = 11;
-    let step: usize = 3;
 
     for (line_num, line) in (read_lines(path)?).enumerate() {
         let line = line?;
@@ -64,7 +60,7 @@ where
                     index += step;
 
                     if index >= board_width {
-                        index = index % board_width;
+                        index %= board_width;
                         skip_to_line = line_num + board_height;
                     }
 
@@ -90,6 +86,36 @@ pub fn run<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
 {
-    println!("couted trees: {}", count_trees(path)?);
+    println!("couted trees: {}", count_trees(path, 11, 11, 3)?);
     Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+
+    #[test_case("..#.##.....", 20 => Err(Ex3Error::WrongLen); "wrong len (to short))")]
+    #[test_case("..#.##.....", 2 => Err(Ex3Error::WrongLen); "wrong len (to long))")]
+    #[test_case("..#.##.....", 11 => Ok("..#.##.....".to_string()); "ok len")]
+    #[test_case("  ..#.##.....", 11 => Ok("..#.##.....".to_string()); "trim left")]
+    #[test_case("..#.##.....   ", 11 => Ok("..#.##.....".to_string()); "trim right")]
+    #[test_case("  ..#.##.....  ", 11 => Ok("..#.##.....".to_string()); "trim both")]
+    #[test_case(".*#.##.....", 11 => Err(Ex3Error::InvalidChar); "invalid char")]
+    fn test_is_valid(s: &str, expexted_len: usize) -> Result<String, Ex3Error> {
+        process_line(s, expexted_len)
+    }
+
+    #[test]
+    fn test_count_trees_no_file(){
+        assert!(count_trees("aaa", 1, 1, 1).is_err())
+    }
+
+    #[test]
+    fn test_count_trees(){
+        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 11, 3).unwrap(), 7);
+        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 11, 0).unwrap(), 3);
+        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 110, 0).unwrap(), 12);
+    }
 }
