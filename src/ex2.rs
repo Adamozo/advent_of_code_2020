@@ -7,10 +7,10 @@ use thiserror::Error;
 
 #[derive(PartialEq, Debug)]
 pub struct Password {
-    min_number: u16,
-    max_number: u16,
+    min_number:   u16,
+    max_number:   u16,
     checked_char: char,
-    passwd: String,
+    passwd:       String,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -42,10 +42,10 @@ impl FromStr for Password {
 
         if let Some(r) = caps {
             Ok(Password {
-                min_number: (&r["min"]).parse::<u16>().unwrap(),
-                max_number: (&r["max"]).parse::<u16>().unwrap(),
+                min_number:   (&r["min"]).parse::<u16>().unwrap(),
+                max_number:   (&r["max"]).parse::<u16>().unwrap(),
                 checked_char: (&r["checked_char"]).chars().next().unwrap(),
-                passwd: (&r["passwd"]).to_string(),
+                passwd:       (&r["passwd"]).to_string(),
             })
         } else {
             Err(PasswordError::CaptureFailed)

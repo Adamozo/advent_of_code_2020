@@ -11,8 +11,8 @@ pub enum Ex3Error {
     #[error("unacceptable line len")]
     WrongLen,
 
-    #[error("to low number of lines in given file")]
-    NotEnaughtLines,
+    #[error("to low number of lines in given file (expected {expected:?}, found {found:?})")]
+    NotEnaughtLines { expected: usize, found: usize },
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -39,44 +39,48 @@ fn process_line(line: &str, expexted_len: usize) -> Result<String, Ex3Error> {
     Ok(cuted.to_string())
 }
 
-/*
-..##.......
-#...#...#..
-.#....#..#.
-..#.#...#.#
-.#...##..#.
-..#.##.....
-.#.#.#....#
-.#........#
-#.##...#...
-#...##....#
-.#..#...#.#
-*/
-
 pub fn count_trees<P>(path: P) -> io::Result<u32>
 where
     P: AsRef<Path>,
 {
-    let mut index = 0;
-    let mut current_line = 0;
-    let board_width: usize = 11;
+    let mut index: usize = 0;
+    let mut skip_to_line: usize = 0;
     let mut trees_num: u32 = 0;
+    let mut curr_line: usize = 0;
+
+    let board_width: usize = 11;
+    let board_height: usize = 11;
+    let step: usize = 3;
 
     for (line_num, line) in (read_lines(path)?).enumerate() {
         let line = line?;
         match process_line(&line, board_width) {
             Ok(p) => {
-                if p.chars().nth(index % board_width).unwrap() == '#' {
-                    trees_num += 1;
+                curr_line = line_num % board_height;
+                if line_num > skip_to_line || skip_to_line == 0 {
+                    if p.chars().nth(index).unwrap() == '#' {
+                        trees_num += 1;
+                    }
+                    index += step;
+
+                    if index >= board_width {
+                        index = index % board_width;
+                        skip_to_line = line_num + board_height;
+                    }
+
+                    if (line_num + 1) % board_height == 0 {
+                        break;
+                    }
                 }
-                index += 1;
-                current_line += 1;
-            }
+            },
             Err(err) => {
                 eprintln! {"{} -> Error: {}", line, err};
                 break;
-            }
+            },
         }
+    }
+    if curr_line + 1 < board_height {
+        eprintln! {"Error: {}", Ex3Error::NotEnaughtLines{expected: board_height, found: curr_line+1}};
     }
 
     Ok(trees_num)
