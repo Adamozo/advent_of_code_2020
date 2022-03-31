@@ -1,3 +1,4 @@
+use anyhow::Context;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -32,14 +33,19 @@ fn process_line(line: &str, expexted_len: usize) -> Result<String, Ex3Error> {
     }
 
     // check if unexpected chars occured
-    if cuted.chars().filter(|c| *c != '.' && *c != '#').count() > 0 {
+    if cuted.chars().any(|c| c != '.' && c != '#') {
         return Err(Ex3Error::InvalidChar);
     }
 
     Ok(cuted.to_string())
 }
 
-fn count_trees<P>(path: P, board_width: usize, board_height: usize, step: usize) -> io::Result<u32>
+fn count_trees<P>(
+    path: P,
+    board_width: usize,
+    board_height: usize,
+    step: usize,
+) -> anyhow::Result<u32>
 where
     P: AsRef<Path>,
 {
@@ -50,46 +56,47 @@ where
 
     for (line_num, line) in (read_lines(path)?).enumerate() {
         let line = line?;
-        match process_line(&line, board_width) {
-            Ok(p) => {
-                curr_line = line_num % board_height;
-                if line_num > skip_to_line || skip_to_line == 0 {
-                    if p.chars().nth(index).unwrap() == '#' {
-                        trees_num += 1;
-                    }
-                    index += step;
+        let p = process_line(&line, board_width)
+            .with_context(|| format!("line content: {} (line={})", line, line_num))?;
 
-                    if index >= board_width {
-                        index %= board_width;
-                        skip_to_line = line_num + board_height;
-                    }
+        curr_line = line_num % board_height;
 
-                    if (line_num + 1) % board_height == 0 {
-                        break;
-                    }
-                }
-            },
-            Err(err) => {
-                eprintln! {"{} -> Error: {}", line, err};
+        if line_num > skip_to_line || skip_to_line == 0 {
+            if p.chars().nth(index).unwrap() == '#' {
+                trees_num += 1;
+            }
+            index += step;
+
+            if index >= board_width {
+                index %= board_width;
+                skip_to_line = line_num + board_height;
+            }
+
+            if (line_num + 1) % board_height == 0 {
                 break;
-            },
+            }
         }
     }
     if curr_line + 1 < board_height {
-        eprintln! {"Error: {}", Ex3Error::NotEnaughtLines{expected: board_height, found: curr_line+1}};
+        return Err(anyhow::anyhow!(
+            "{}",
+            Ex3Error::NotEnaughtLines {
+                expected: board_height,
+                found:    curr_line + 1,
+            }
+        ));
     }
 
     Ok(trees_num)
 }
 
-pub fn run<P>(path: P) -> io::Result<()>
+pub fn run<P>(path: P) -> anyhow::Result<()>
 where
     P: AsRef<Path>,
 {
     println!("couted trees: {}", count_trees(path, 11, 11, 3)?);
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -108,14 +115,20 @@ mod tests {
     }
 
     #[test]
-    fn test_count_trees_no_file(){
+    fn test_count_trees_no_file() {
         assert!(count_trees("aaa", 1, 1, 1).is_err())
     }
 
     #[test]
-    fn test_count_trees(){
-        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 11, 3).unwrap(), 7);
-        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 11, 0).unwrap(), 3);
-        assert_eq!(count_trees("data_files/ex3_given_example.txt", 11, 110, 0).unwrap(), 12);
+    fn test_count_trees() {
+        assert_eq!(
+            count_trees("data_files/ex3_given_example.txt", 11, 11, 3).unwrap(),
+            7
+        );
+        assert_eq!(
+            count_trees("data_files/ex3_given_example.txt", 11, 11, 0).unwrap(),
+            3
+        );
+        assert!(count_trees("data_files/ex3_given_example.txt", 11, 110, 0).is_err());
     }
 }
