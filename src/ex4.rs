@@ -10,24 +10,59 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn load_data<P>(path: P) -> anychow::Result<()> 
-where 
+fn load_data<P>(path: P) -> io::Result<Vec<String>>
+where
     P: AsRef<Path>,
 {
-    for line in read_lines(path)?{
+    let mut passports: Vec<String> = Vec::new();
+    passports.push("".to_owned());
+
+    for line in read_lines(path)? {
         let line = line?;
-        match line.parse::<Password>(){
-            Ok(p) => println!("{:?}: is_valid == {}", line, p.is_valid()),
-            Err(err) => eprintln! {"{:?} -> Error: {}", line, err},
+        if line.len() == 0 {
+            passports.push("".to_owned());
+        } else {
+            let size: usize = passports.len() - 1;
+            passports[size] += " ";
+            passports[size] += &*line;
         }
     }
-    
-    Ok(())
+
+    Ok(passports)
 }
 
-pub fn run<P>(path: P) -> anychow::Result<()> 
-where 
+fn is_field_interesting(f: &str) -> bool {
+    let temp = f.to_string();
+    let interesting_fields = vec!["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"];
+    if temp.len() > 0 {
+        let field = &temp[0..3];
+        return interesting_fields.iter().any(|f| *f==field);
+    }
+
+    false
+}
+
+fn count_valid_passports(passports: &Vec<String>) -> io::Result<usize> {
+    let res = passports
+        .iter()
+        .filter(|e| {
+            e.split(" ")
+                .collect::<Vec<&str>>()
+                .iter()
+                .filter(|c| is_field_interesting(c))
+                .count()
+                >= 7
+        })
+        .count();
+    Ok(res)
+}
+
+pub fn run<P>(path: P) -> io::Result<()>
+where
     P: AsRef<Path>,
 {
-    load_data(path)
+    let passports = load_data(path)?;
+    println!("{:?}", count_valid_passports(&passports)?);
+
+    Ok(())
 }
