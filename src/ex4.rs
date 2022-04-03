@@ -17,6 +17,9 @@ where
     let mut container: String = String::new();
     let mut counter: usize = 0;
 
+    let last_empty_string_iter = vec![Ok("".into())].into_iter();
+    for line in read_lines(path)?.chain(last_empty_string_iter) {
+
     for line in read_lines(path)? {
         let line = line?;
         if line.is_empty() {
@@ -36,7 +39,7 @@ where
 fn is_field_interesting(f: &str) -> u32 {
     let interesting_fields = vec!["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"];
     if !f.is_empty() {
-        let field = &f[0..3];
+        let field = &f[0..3];  // split_once
         if interesting_fields.iter().any(|f| *f == field) {
             return 1;
         }
