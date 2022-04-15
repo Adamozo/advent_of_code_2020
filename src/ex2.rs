@@ -61,18 +61,18 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-pub fn run<P>(path: P) -> io::Result<()> 
-where 
+pub fn run<P>(path: P) -> io::Result<()>
+where
     P: AsRef<Path>,
 {
-    for line in read_lines(path)?{
+    for line in read_lines(path)? {
         let line = line?;
-        match line.parse::<Password>(){
+        match line.parse::<Password>() {
             Ok(p) => println!("{:?}: is_valid == {}", line, p.is_valid()),
             Err(err) => eprintln! {"{:?} -> Error: {}", line, err},
         }
     }
-    
+
     Ok(())
 }
 
