@@ -58,4 +58,9 @@ mod tests {
     fn test_run_file_exists() {
         assert!(!run("data_files/ex6.txt").is_err())
     }
+
+    #[test]
+    fn test_count_answers() {
+        assert_eq!(count_answers("data_files/ex6.txt").unwrap(), 11)
+    }
 }
