@@ -23,6 +23,51 @@ fn get_index(filed: &str) -> i16 {
     }
 }
 
+fn get_mapper_value(filed: &str) -> i16 {
+    match filed {
+        "byr" => 1,
+        "iyr" => 2,
+        "eyr" => 4,
+        "hgt" => 8,
+        "hcl" => 16,
+        "ecl" => 32,
+        "pid" => 64,
+        "cid" => 0,
+        _ => unreachable!(),
+    }
+}
+
+fn count_valid_passports2<P>(path: P) -> io::Result<usize>
+where
+    P: AsRef<Path>,
+{
+    let mut mapper = 0;
+    let mut counter: usize = 0;
+
+    for line in read_lines(path)? {
+        let line = line?;
+        if line.is_empty() {
+            if mapper == 127 {
+                counter += 1;
+            }
+
+            mapper = 0;
+        } else {
+            //mapper += line.split(' ').next().unwrap().split(':').next().map(|key| match key {"byr" => 1, "iyr" => 2, "eyr" => 4, "hgt" => 8, "hcl" => 16, "ecl" => 32, "pid" => 64, "cid" => 0, _ => unreachable!(),}).fold(mapper, |sum, &val| {sum += val; sum});
+            for l in line.split(' ') {
+                let to_check = l.split(':').next().unwrap();
+                mapper += get_mapper_value(to_check);
+            }
+        }
+    }
+
+    if mapper == 127 {
+        counter += 1;
+    }
+
+    Ok(counter)
+}
+
 fn count_valid_passports<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
@@ -61,7 +106,7 @@ pub fn run<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
 {
-    let passports = count_valid_passports(path)?;
+    let passports = count_valid_passports2(path)?;
     println!("{:?}", passports);
 
     Ok(())

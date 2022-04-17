@@ -1,2 +1,5 @@
 /target
 /.vscode
+/src/ex2.rs
+/src/ex5.rs
+/data_files/ex5.txt
