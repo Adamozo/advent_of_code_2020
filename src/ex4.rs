@@ -53,7 +53,21 @@ where
 
             mapper = 0;
         } else {
-            //mapper += line.split(' ').next().unwrap().split(':').next().map(|key| match key {"byr" => 1, "iyr" => 2, "eyr" => 4, "hgt" => 8, "hcl" => 16, "ecl" => 32, "pid" => 64, "cid" => 0, _ => unreachable!(),}).fold(mapper, |sum, &val| {sum += val; sum});
+            mapper += line
+                .split(' ')
+                .map(|e| e.split_once(':').unwrap().0)
+                .map(|key| match key {
+                    "byr" => 1,
+                    "iyr" => 2,
+                    "eyr" => 4,
+                    "hgt" => 8,
+                    "hcl" => 16,
+                    "ecl" => 32,
+                    "pid" => 64,
+                    "cid" => 0,
+                    _ => unreachable!(),
+                })
+                .sum();
             for l in line.split(' ') {
                 let to_check = l.split(':').next().unwrap();
                 mapper += get_mapper_value(to_check);
