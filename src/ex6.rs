@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
     P: AsRef<Path>,
@@ -10,6 +11,99 @@ where
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
+
+fn mapp_char(c: char) -> u16
+{
+    match c {
+        'a' => 2,
+        'b' => 3,
+        'c'=> 5,
+        'd'=> 7,
+        'e'=> 11,
+        'f'=> 13,
+        'g'=> 17,
+        'h'=> 19,
+        'i'=> 23,
+        'j'=> 29,
+        'k'=> 31,
+        'l'=> 37,
+        'm'=> 41,
+        'n'=> 43,
+        'o'=> 47,
+        'p'=> 53,
+        'q'=> 59,
+        'r'=> 61,
+        's'=> 67,
+        't'=> 71,
+        'u'=> 73,
+        'v'=> 79,
+        'w'=> 83,
+        'x'=> 89,
+        'y'=> 97,
+        'z'=>101,
+        _=> unreachable!(),
+    }
+}
+
+fn count_answers3<P>(path: P) -> io::Result<usize>
+where
+    P: AsRef<Path>,
+{
+    let mut mapper = 1;
+    let mut counter: usize = 0;
+    let mut questions: usize = 0;
+
+    for line in read_lines(path)? {
+        let line = line?;
+        if line.is_empty() {
+            counter += questions;
+            mapper = 1;
+            questions = 0;
+        } else {
+            for question in line.chars() {
+                let to_check = mapp_char(question) as u128;
+                if mapper % to_check != 0 {
+                    mapper *= to_check;
+                    questions += 1; 
+                }
+            }
+        }
+    }
+
+    counter += questions;
+
+    Ok(counter)
+}
+
+fn count_answers2<P>(path: P) -> io::Result<usize>
+where
+    P: AsRef<Path>,
+{
+    let mut questions: Vec<char> = Vec::new();
+    let mut counter: usize = 0;
+
+    for line in read_lines(path)? {
+        let line = line?;
+        if line.is_empty() {
+            questions.sort_unstable();
+            questions.dedup();
+            counter += questions.len();
+            questions = Vec::new();
+        } else {
+            for question in line.chars() {
+                questions.push(question);
+            }
+        }
+    }
+
+    questions.sort_unstable();
+    questions.dedup();
+    counter += questions.len();
+
+    Ok(counter)
+
+}
+
 
 fn count_answers<P>(path: P) -> io::Result<usize>
 where
@@ -39,7 +133,7 @@ pub fn run<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
 {
-    let passports = count_answers(path)?;
+    let passports = count_answers2(path)?;
     println!("{:?}", passports);
 
     Ok(())
