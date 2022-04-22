@@ -53,7 +53,7 @@ where
 
             mapper = 0;
         } else {
-            mapper += line
+            let m: i16 = line
                 .split(' ')
                 .map(|e| e.split_once(':').unwrap().0)
                 .map(|key| match key {
@@ -68,6 +68,7 @@ where
                     _ => unreachable!(),
                 })
                 .sum();
+            mapper += m;    
             for l in line.split(' ') {
                 let to_check = l.split(':').next().unwrap();
                 mapper += get_mapper_value(to_check);
