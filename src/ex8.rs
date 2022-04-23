@@ -8,41 +8,44 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum OperationError {
-    #[error("unable to parse instruction")]
-    ParseInstructionError,
+    #[error("unable to parse operation")]
+    ParseOperationError,
 
-    #[error("unable to parse step")]
-    ParseStepError,
+    #[error("unknown operation `{0}`")]
+    UnknownOperation(String),
+
+    #[error("unable to parse operation argument")]
+    ParseArgumentError,
 
     #[error("unable to find operation with given number")]
     NoOperation,
 }
 
 #[derive(Debug, PartialEq)]
-struct Operation {
-    instruction: u8, // nop -> 0, acc -> 1, jmp ->2
-    step:        i16,
+enum Operation {
+    Nop,
+    Acc(i16),
+    Jmp(i16),
 }
 
 impl FromStr for Operation {
     type Err = OperationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let coords: Vec<&str> = s.trim_matches(|c| c == '+').split(' ').collect();
+        let (operation, argument) = s
+            .split_once(' ')
+            .ok_or(OperationError::ParseOperationError)?;
 
-        let instruction = match coords[0] {
-            "nop" => 0,
-            "acc" => 1,
-            "jmp" => 2,
-            _ => return Err(OperationError::ParseInstructionError),
+        let argument = i16::from_str(argument).map_err(|_| OperationError::ParseArgumentError)?;
+
+        let operation = match operation {
+            "nop" => Operation::Nop,
+            "acc" => Operation::Acc(argument),
+            "jmp" => Operation::Jmp(argument),
+            _ => return Err(OperationError::UnknownOperation(operation.into())),
         };
 
-        let step = match i16::from_str(coords[1]) {
-            Ok(p) => p,
-            Err(p) => return Err(OperationError::ParseStepError),
-        };
-
-        Ok(Operation { instruction, step })
+        Ok(operation)
     }
 }
 
@@ -82,30 +85,30 @@ where
     Ok(operations)
 }
 
-fn evaluate2<P>(path: &P) -> anyhow::Result<i32>
+fn evaluate2<P>(path: &P) -> anyhow::Result<i16>
 where
     P: AsRef<Path>,
 {
-    let mut accumulator: i32 = 0;
+    let mut accumulator: i16 = 0;
     let mut visited: Vec<usize> = Vec::new();
 
     let mut operation_num: usize = 0;
 
     while !visited.contains(&operation_num) {
-        let op: Operation = Operation::from_str(&*load_instruction_num(&path, operation_num)?)?;
+        let op: Operation = Operation::from_str(load_instruction_num(&path, operation_num)?.as_str())?;
         visited.push(operation_num);
 
-        match op.instruction {
-            0 => {
+        match op {
+            Operation::Nop => {
                 operation_num += 1;
             },
-            1 => {
+            Operation::Acc(value) => {
                 operation_num += 1;
-                accumulator += op.step as i32;
+                accumulator += value;
             },
 
-            2 => {
-                operation_num = (operation_num as i16 + op.step) as usize;
+            Operation::Jmp(num) => {
+                operation_num = (operation_num as i16 + num) as usize;
             },
 
             _ => unreachable!(), // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
@@ -115,12 +118,12 @@ where
     Ok(accumulator)
 }
 
-fn evaluate1<P>(path: &P) -> anyhow::Result<i32>
+fn evaluate1<P>(path: &P) -> anyhow::Result<i16>
 where
     P: AsRef<Path>,
 {
     let operations = load_instructions(path)?;
-    let mut accumulator: i32 = 0;
+    let mut accumulator: i16 = 0;
     let mut visited: Vec<usize> = Vec::new();
 
     let mut operation_num: usize = 0;
@@ -128,20 +131,20 @@ where
     while !visited.contains(&operation_num) {
         visited.push(operation_num);
         let op = &operations[&operation_num];
-        match op.instruction {
-            0 => {
+        match op {
+            Operation::Nop => {
                 operation_num += 1;
             },
-            1 => {
+            Operation::Acc(value) => {
                 operation_num += 1;
-                accumulator += op.step as i32;
+                accumulator += value;
             },
 
-            2 => {
-                operation_num = (operation_num as i16 + op.step) as usize;
+            Operation::Jmp(num) => {
+                operation_num = (operation_num as i16 + num) as usize;
             },
 
-            _ => unreachable!(), // tak jak w evaluate2
+            _ => unreachable!(), // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
         }
     }
 
@@ -162,12 +165,13 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("nop +0" => Ok(Operation{instruction: 0, step: 0}); "nop +0 ok")]
-    #[test_case("acc +1" => Ok(Operation{instruction: 1, step: 1}); "acc +1 ok")]
-    #[test_case("jmp +4" => Ok(Operation{instruction: 2, step: 4}); "jmp +4 ok")]
-    #[test_case("jmp -3" => Ok(Operation{instruction: 2, step: -3}); "jmp -3 ok")]
-    #[test_case("a -3" => Err(OperationError::ParseInstructionError); "instuction a is not valid")]
-    #[test_case("jmp a" => Err(OperationError::ParseStepError); "step a is not valid")]
+    #[test_case("nop +0" => Ok(Operation::Nop); "nop +0 ok")]
+    #[test_case("acc +1" => Ok(Operation::Acc(1)); "acc +1 ok")]
+    #[test_case("jmp +4" => Ok(Operation::Jmp(4)); "jmp +4 ok")]
+    #[test_case("jmp -3" => Ok(Operation::Jmp(-3)); "jmp -3 ok")]
+    #[test_case("a-3" => Err(OperationError::ParseOperationError); "can't parse input string as an operation")]
+    #[test_case("a -3" => Err(OperationError::UnknownOperation("a".into())); "instruction a is not valid")]
+    #[test_case("jmp a" => Err(OperationError::ParseArgumentError); "step a is not valid")]
     fn test_ex8_operation_from_str(input: &str) -> Result<Operation, OperationError> {
         input.parse::<Operation>()
     }
