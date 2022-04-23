@@ -14,6 +14,9 @@ pub enum OperationError {
 
     #[error("unable to parse step")]
     ParseStepError,
+
+    #[error("unable to find operation with given number")]
+    NoOperation,
 }
 
 #[derive(Debug)]
@@ -55,7 +58,21 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn load_instructions1<P>(path: P) -> anyhow::Result<HashMap<usize, Operation>>
+fn load_instruction_num<P>(path: &P, num: usize) -> anyhow::Result<String>
+where
+    P: AsRef<Path>,
+{
+    for (line_num, line) in (read_lines(path)?).enumerate() {
+        if line_num == num {
+            let line = line?;
+            return Ok(line);
+        }
+    }
+
+    Err(anyhow::anyhow!("{}",OperationError::NoOperation))
+}
+
+fn load_instructions<P>(path: P) -> anyhow::Result<HashMap<usize, Operation>>
 where
     P: AsRef<Path>,
 {
@@ -69,11 +86,45 @@ where
     Ok(operations)
 }
 
+fn evaluate2<P>(path: P) -> anyhow::Result<i32>
+where
+    P: AsRef<Path>,
+{
+    let operations = load_instructions(path)?;
+    let mut accumulator: i32 = 0;
+    let mut visited: Vec<usize> = Vec::new();
+
+    let mut operation_num: usize = 0;
+
+    while !visited.contains(&operation_num) {
+        visited.push(operation_num);
+        let op = &operations[&operation_num];
+        match op.instruction{
+            0 => {
+                operation_num += 1;
+            },
+            1 => {
+                operation_num += 1;
+                accumulator += op.step as i32;
+            },
+
+            2 => {
+                operation_num = (operation_num as i16 + op.step) as usize;
+            },
+
+            _ => unreachable!() // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
+        }
+    }
+
+    Ok(accumulator)
+}
+
+
 fn evaluate1<P>(path: P) -> anyhow::Result<i32>
 where
     P: AsRef<Path>,
 {
-    let operations = load_instructions1(path)?;
+    let operations = load_instructions(path)?;
     let mut accumulator: i32 = 0;
     let mut visited: Vec<usize> = Vec::new();
 
@@ -107,6 +158,7 @@ where
     P: AsRef<Path>,
 {
     //let res = Operation::from_str("jmp -3").unwrap();
+    println!("line 5: {}", load_instruction_num(&path, 100)?);
     println!("accumulator: {:?}", evaluate1(path)?);
     Ok(())
 }
