@@ -18,7 +18,7 @@ pub enum OperationError {
     NoOperation,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Operation {
     instruction: u8, // nop -> 0, acc -> 1, jmp ->2
     step:        i16,
@@ -94,7 +94,7 @@ where
     while !visited.contains(&operation_num) {
         let op: Operation = Operation::from_str(&*load_instruction_num(&path, operation_num)?)?;
         visited.push(operation_num);
-        
+
         match op.instruction {
             0 => {
                 operation_num += 1;
@@ -157,9 +157,45 @@ where
     Ok(())
 }
 
-// tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
 
-// from string z test case
-// load data sciezka i wynik
-// run sciezka i wynik
-// evaluate cale
+    #[test_case("nop +0" => Ok(Operation{instruction: 0, step: 0}); "nop +0 ok")]
+    #[test_case("acc +1" => Ok(Operation{instruction: 1, step: 1}); "acc +1 ok")]
+    #[test_case("jmp +4" => Ok(Operation{instruction: 2, step: 4}); "jmp +4 ok")]
+    #[test_case("jmp -3" => Ok(Operation{instruction: 2, step: -3}); "jmp -3 ok")]
+    #[test_case("a -3" => Err(OperationError::ParseInstructionError); "instuction a is not valid")]
+    #[test_case("jmp a" => Err(OperationError::ParseStepError); "step a is not valid")]
+    fn test_ex8_operation_from_str(input: &str) -> Result<Operation, OperationError> {
+        input.parse::<Operation>()
+    }
+
+    #[test]
+    fn test_ex8_evaluate1() {
+        assert_eq!(evaluate1(&"data_files/ex8.txt").unwrap(), 5);
+        assert!(evaluate1(&"aaa").is_err())
+    }
+
+    #[test]
+    fn test_ex8_evaluate2() {
+        assert_eq!(evaluate2(&"data_files/ex8.txt").unwrap(), 5);
+        assert!(evaluate2(&"aaa").is_err())
+    }
+
+    #[test]
+    fn test_ex8_run_no_file() {
+        assert!(run("aaa").is_err())
+    }
+
+    #[test]
+    fn test_ex8_load_instruction_num_no_file() {
+        assert!(load_instruction_num(&"aaa", 1).is_err())
+    }
+
+    #[test]
+    fn test_ex8_load_instructions_no_file() {
+        assert!(load_instructions(&"aaa").is_err())
+    }
+}
