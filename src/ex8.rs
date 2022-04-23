@@ -1,11 +1,10 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::{self};
 use std::path::Path;
-use thiserror::Error;
 use std::str::FromStr;
-use std::collections::HashMap;
-
+use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum OperationError {
@@ -20,34 +19,31 @@ pub enum OperationError {
 }
 
 #[derive(Debug)]
-struct Operation{
+struct Operation {
     instruction: u8, // nop -> 0, acc -> 1, jmp ->2
-    step: i16,
+    step:        i16,
 }
 
-impl FromStr for Operation{
+impl FromStr for Operation {
     type Err = OperationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let coords: Vec<&str> = s.trim_matches(|c| c == '+')
-                                 .split(' ')
-                                 .collect();
+        let coords: Vec<&str> = s.trim_matches(|c| c == '+').split(' ').collect();
 
         let instruction = match coords[0] {
             "nop" => 0,
             "acc" => 1,
             "jmp" => 2,
-            _ => return Err(OperationError::ParseInstructionError)
+            _ => return Err(OperationError::ParseInstructionError),
         };
 
-        let step = match i16::from_str(coords[1]){
+        let step = match i16::from_str(coords[1]) {
             Ok(p) => p,
-            Err(p) => return Err(OperationError::ParseStepError)
+            Err(p) => return Err(OperationError::ParseStepError),
         };
 
-        Ok(Operation{instruction, step})
+        Ok(Operation { instruction, step })
     }
-
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -69,10 +65,10 @@ where
         }
     }
 
-    Err(anyhow::anyhow!("{}",OperationError::NoOperation))
+    Err(anyhow::anyhow!("{}", OperationError::NoOperation))
 }
 
-fn load_instructions<P>(path: P) -> anyhow::Result<HashMap<usize, Operation>>
+fn load_instructions<P>(path: &P) -> anyhow::Result<HashMap<usize, Operation>>
 where
     P: AsRef<Path>,
 {
@@ -86,20 +82,20 @@ where
     Ok(operations)
 }
 
-fn evaluate2<P>(path: P) -> anyhow::Result<i32>
+fn evaluate2<P>(path: &P) -> anyhow::Result<i32>
 where
     P: AsRef<Path>,
 {
-    let operations = load_instructions(path)?;
     let mut accumulator: i32 = 0;
     let mut visited: Vec<usize> = Vec::new();
 
     let mut operation_num: usize = 0;
 
     while !visited.contains(&operation_num) {
+        let op: Operation = Operation::from_str(&*load_instruction_num(&path, operation_num)?)?;
         visited.push(operation_num);
-        let op = &operations[&operation_num];
-        match op.instruction{
+        
+        match op.instruction {
             0 => {
                 operation_num += 1;
             },
@@ -112,15 +108,14 @@ where
                 operation_num = (operation_num as i16 + op.step) as usize;
             },
 
-            _ => unreachable!() // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
+            _ => unreachable!(), // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
         }
     }
 
     Ok(accumulator)
 }
 
-
-fn evaluate1<P>(path: P) -> anyhow::Result<i32>
+fn evaluate1<P>(path: &P) -> anyhow::Result<i32>
 where
     P: AsRef<Path>,
 {
@@ -133,7 +128,7 @@ where
     while !visited.contains(&operation_num) {
         visited.push(operation_num);
         let op = &operations[&operation_num];
-        match op.instruction{
+        match op.instruction {
             0 => {
                 operation_num += 1;
             },
@@ -146,7 +141,7 @@ where
                 operation_num = (operation_num as i16 + op.step) as usize;
             },
 
-            _ => unreachable!() // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
+            _ => unreachable!(), // tak jak w evaluate2
         }
     }
 
@@ -157,9 +152,8 @@ pub fn run<P>(path: P) -> anyhow::Result<()>
 where
     P: AsRef<Path>,
 {
-    //let res = Operation::from_str("jmp -3").unwrap();
-    println!("line 5: {}", load_instruction_num(&path, 100)?);
-    println!("accumulator: {:?}", evaluate1(path)?);
+    println!("evaluate1 accumulator: {}", evaluate1(&path)?);
+    println!("evaluate2 accumulator: {}", evaluate2(&path)?);
     Ok(())
 }
 
