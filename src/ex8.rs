@@ -110,8 +110,6 @@ where
             Operation::Jmp(num) => {
                 operation_num = (operation_num as i16 + num) as usize;
             },
-
-            _ => unreachable!(), // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
         }
     }
 
@@ -143,8 +141,6 @@ where
             Operation::Jmp(num) => {
                 operation_num = (operation_num as i16 + num) as usize;
             },
-
-            _ => unreachable!(), // czy da się jakoś to ominąć, ponieważ nie wysąpi inny przypadek
         }
     }
 
