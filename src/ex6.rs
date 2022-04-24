@@ -43,6 +43,19 @@ fn mapp_char(c: char) -> u16 {
     }
 }
 
+pub fn count_answers4(pattern: &str) -> u32 {
+    pattern
+        .split("\n\n")
+        .map(|group| {
+            group
+                .bytes()
+                .filter(|e| *e != b'\n')
+                .fold(0u32, |answers, b| answers | 1 << (b - b'a'))
+                .count_ones()
+        })
+        .sum::<u32>()
+}
+
 pub fn count_answers3<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
