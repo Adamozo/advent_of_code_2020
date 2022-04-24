@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
     P: AsRef<Path>,
@@ -12,40 +11,39 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn mapp_char(c: char) -> u16
-{
+fn mapp_char(c: char) -> u16 {
     match c {
         'a' => 2,
         'b' => 3,
-        'c'=> 5,
-        'd'=> 7,
-        'e'=> 11,
-        'f'=> 13,
-        'g'=> 17,
-        'h'=> 19,
-        'i'=> 23,
-        'j'=> 29,
-        'k'=> 31,
-        'l'=> 37,
-        'm'=> 41,
-        'n'=> 43,
-        'o'=> 47,
-        'p'=> 53,
-        'q'=> 59,
-        'r'=> 61,
-        's'=> 67,
-        't'=> 71,
-        'u'=> 73,
-        'v'=> 79,
-        'w'=> 83,
-        'x'=> 89,
-        'y'=> 97,
-        'z'=>101,
-        _=> unreachable!(),
+        'c' => 5,
+        'd' => 7,
+        'e' => 11,
+        'f' => 13,
+        'g' => 17,
+        'h' => 19,
+        'i' => 23,
+        'j' => 29,
+        'k' => 31,
+        'l' => 37,
+        'm' => 41,
+        'n' => 43,
+        'o' => 47,
+        'p' => 53,
+        'q' => 59,
+        'r' => 61,
+        's' => 67,
+        't' => 71,
+        'u' => 73,
+        'v' => 79,
+        'w' => 83,
+        'x' => 89,
+        'y' => 97,
+        'z' => 101,
+        _ => unreachable!(),
     }
 }
 
-fn count_answers3<P>(path: P) -> io::Result<usize>
+pub fn count_answers3<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
 {
@@ -64,7 +62,7 @@ where
                 let to_check = mapp_char(question) as u128;
                 if mapper % to_check != 0 {
                     mapper *= to_check;
-                    questions += 1; 
+                    questions += 1;
                 }
             }
         }
@@ -75,7 +73,7 @@ where
     Ok(counter)
 }
 
-fn count_answers2<P>(path: P) -> io::Result<usize>
+pub fn count_answers2<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
 {
@@ -101,11 +99,9 @@ where
     counter += questions.len();
 
     Ok(counter)
-
 }
 
-
-fn count_answers<P>(path: P) -> io::Result<usize>
+pub fn count_answers<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
 {
