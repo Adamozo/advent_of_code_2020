@@ -56,6 +56,54 @@ pub fn count_answers4(pattern: &str) -> u32 {
         .sum::<u32>()
 }
 
+fn get_data() -> String {
+    "abc
+
+    a
+    b
+    c
+    
+    ab
+    ac
+    
+    a
+    a
+    a
+    a
+    
+    b"
+    .to_string()
+}
+
+pub fn count_answers3_bench(pattern: &str) -> usize {
+    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
+
+    let mut mapper = 1;
+    let mut counter: usize = 0;
+    let mut questions: usize = 0;
+
+    for line in lines {
+        let line = line;
+        if line.is_empty() {
+            counter += questions;
+            mapper = 1;
+            questions = 0;
+        } else {
+            for question in line.chars() {
+                let to_check = mapp_char(question) as u128;
+                if mapper % to_check != 0 {
+                    mapper *= to_check;
+                    questions += 1;
+                }
+            }
+        }
+    }
+
+    counter += questions;
+
+    counter
+}
+
 pub fn count_answers3<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
@@ -86,6 +134,32 @@ where
     Ok(counter)
 }
 
+pub fn count_answers2_bench(pattern: &str) -> usize {
+    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
+    let mut questions: Vec<char> = Vec::new();
+    let mut counter: usize = 0;
+
+    for line in lines {
+        let line = line;
+        if line.is_empty() {
+            questions.sort_unstable();
+            questions.dedup();
+            counter += questions.len();
+            questions = Vec::new();
+        } else {
+            for question in line.chars() {
+                questions.push(question);
+            }
+        }
+    }
+
+    questions.sort_unstable();
+    questions.dedup();
+    counter += questions.len();
+
+    counter
+}
+
 pub fn count_answers2<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
@@ -112,6 +186,28 @@ where
     counter += questions.len();
 
     Ok(counter)
+}
+
+pub fn count_answers_bench(pattern: &str) -> usize {
+    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
+    let mut questions: HashSet<char> = HashSet::new();
+    let mut counter: usize = 0;
+
+    for line in lines {
+        let line = line;
+        if line.is_empty() {
+            counter += questions.len();
+            questions = HashSet::new();
+        } else {
+            for question in line.chars() {
+                questions.insert(question);
+            }
+        }
+    }
+
+    counter += questions.len();
+
+    counter
 }
 
 pub fn count_answers<P>(path: P) -> io::Result<usize>
@@ -143,6 +239,9 @@ where
     P: AsRef<Path>,
 {
     let passports = count_answers2(path)?;
+    println!("{:?}", passports);
+
+    let passports = count_answers_bench(get_data().as_str());
     println!("{:?}", passports);
 
     Ok(())
