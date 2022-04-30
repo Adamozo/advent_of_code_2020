@@ -45,13 +45,11 @@ pub fn solve(pattern: &str, preamble_size: usize) -> SolveResult {
         .split("\r\n")
         .map(|f| f.parse::<u16>().unwrap())
         .collect();
-    let res = input.iter().enumerate().find(|elem| {
-        if elem.0 >= preamble_size {
-            !is_sum_of_two((&input[elem.0 - preamble_size..elem.0]).to_vec(), elem.1)
-        } else {
-            false
-        }
-    });
+    let res = input
+        .iter()
+        .enumerate()
+        .filter(|elem| elem.0 >= preamble_size)
+        .find(|elem| !is_sum_of_two((&input[elem.0 - preamble_size..elem.0]).to_vec(), elem.1));
 
     match res {
         None => SolveResult::NoInvalidElement,
@@ -64,8 +62,10 @@ where
     P: AsRef<Path>,
 {
     let data = get_data(path)?;
-    let res = solve(data.as_str(), 5);
-    println!("Lowest invalid number is is: {:#?}", res);
+    match solve(data.as_str(), 5){
+        SolveResult::InvalidElement(element) =>  println!("Lowest invalid number is is: {}", element),
+        SolveResult::NoInvalidElement => println!("Input does not have invalid element")
+    };
     Ok(())
 }
 
