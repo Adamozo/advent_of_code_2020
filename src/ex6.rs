@@ -76,13 +76,11 @@ fn get_data() -> String {
 }
 
 pub fn count_answers3_bench(pattern: &str) -> usize {
-    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
-
     let mut mapper = 1;
     let mut counter: usize = 0;
     let mut questions: usize = 0;
 
-    for line in lines {
+    for line in pattern.split("\n").map(|l| l.trim()) {
         let line = line;
         if line.is_empty() {
             counter += questions;
@@ -135,11 +133,10 @@ where
 }
 
 pub fn count_answers2_bench(pattern: &str) -> usize {
-    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
     let mut questions: Vec<char> = Vec::new();
     let mut counter: usize = 0;
 
-    for line in lines {
+    for line in pattern.split("\n").map(|l| l.trim()) {
         let line = line;
         if line.is_empty() {
             questions.sort_unstable();
@@ -189,11 +186,10 @@ where
 }
 
 pub fn count_answers_bench(pattern: &str) -> usize {
-    let lines: Vec<&str> = pattern.split("\n").map(|l| l.trim()).collect();
     let mut questions: HashSet<char> = HashSet::new();
     let mut counter: usize = 0;
 
-    for line in lines {
+    for line in pattern.split("\n").map(|l| l.trim()) {
         let line = line;
         if line.is_empty() {
             counter += questions.len();
