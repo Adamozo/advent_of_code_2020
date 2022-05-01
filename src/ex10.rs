@@ -20,7 +20,7 @@ pub enum AdaptersConnectError {
 
 pub fn connect_adapters(adapters: &str) -> Result<u64, AdaptersConnectError> {
     let mut res: Vec<u16> = adapters
-        .split("\r\n")
+        .lines()
         .map(|f| f.parse::<u16>().unwrap())
         .collect();
 
@@ -28,11 +28,11 @@ pub fn connect_adapters(adapters: &str) -> Result<u64, AdaptersConnectError> {
 
     let connected = res
         .iter()
-        .try_fold((0u16, 0u16, 0u16), |acc, x| match *x - acc.2 {
-            1 => Continue((acc.0 + 1, acc.1, *x)),
-            2 => Continue((acc.0, acc.1, *x)),
-            3 => Continue((acc.0, acc.1 + 1, *x)),
-            _ => Break(AdaptersConnectError::ToBigDifference(acc.2, *x)),
+        .try_fold((0u16, 0u16, 0u16), |(diff_1,diff_3,prev_val), val| match *val - prev_val {
+            1 => Continue((diff_1 + 1, diff_3, *val)),
+            2 => Continue((diff_1, diff_3, *val)),
+            3 => Continue((diff_1, diff_3 + 1, *val)),
+            _ => Break(AdaptersConnectError::ToBigDifference(prev_val, *val)),
         });
 
     match connected {
