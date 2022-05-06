@@ -36,7 +36,7 @@ pub fn connect_adapters(adapters: &str) -> Result<u64, AdaptersConnectError> {
         });
 
     match connected {
-        Continue(ok) => Ok((ok.0 * ok.1).into()),
+        Continue(ok) => Ok((ok.0 * (ok.1+1)).into()),
         Break(err) => Err(err),
     }
 }
