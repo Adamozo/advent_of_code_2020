@@ -16,5 +16,9 @@ test-case = "2.0.0"
 criterion = "0.3.5"
 
 [[bench]]
+<<<<<<< HEAD
 name = "ex6_benchmark"
+=======
+name = "my_benchmark"
+>>>>>>> ex8
 harness = false
