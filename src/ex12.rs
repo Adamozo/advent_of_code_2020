@@ -85,29 +85,30 @@ where
     P: AsRef<Path>,
 {
     let data = get_data(path)?;
-    println!("movement: {:?}", count_travel_distance(data.as_str()));
+    println!("movement: {:?}", count_travel_distance(data.as_str())?);
     Ok(())
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use test_case::test_case;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
 
-//     #[test_case("data_files/ex10.txt" => Ok(198))]
-//     #[test_case("data_files/ex10_error.txt" => Err(AdaptersConnectError::ToBigDifference(49, 200)))]
-//     fn test_extract_seat_num(s: &str) -> Result<u64, AdaptersConnectError> {
-//         let data = get_data(s).unwrap();
-//         connect_adapters(data.as_str())
-//     }
+    #[test_case("data_files/ex12.txt" => Ok(25.0))]
+    #[test_case("data_files/ex12_mydata.txt" => Ok(41.84))]
+    #[test_case("data_files/ex12_invalid.txt" => Err(CaptureError::CaptureFailed))]
+    fn test_ex12_count_travel_distance(s: &str) -> Result<f32, CaptureError> {
+        let data = get_data(s).unwrap();
+        count_travel_distance(data.as_str())
+    }
 
-//     #[test]
-//     fn test_ex10_run_no_file() {
-//         assert!(run("aaa").is_err())
-//     }
+    #[test]
+    fn test_ex12_run_no_file() {
+        assert!(run("aaa").is_err())
+    }
 
-//     #[test]
-//     fn test_ex10_run_file_exists() {
-//         assert!(!run("data_files/ex10.txt").is_err())
-//     }
-// }
+    #[test]
+    fn test_ex12_run_file_exists() {
+        assert!(!run("data_files/ex12.txt").is_err())
+    }
+}
