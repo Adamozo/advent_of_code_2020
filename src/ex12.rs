@@ -1,15 +1,6 @@
-use lazy_regex::{regex, Lazy, Regex};
 use std::fs;
-use std::io::{self};
-use std::ops::ControlFlow::{Break, Continue};
 use std::path::Path;
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq)]
-pub enum CaptureError {
-    #[error("unable to capture action")]
-    CaptureFailed,
-}
+use std::str::FromStr;
 
 #[derive(Debug)]
 struct ShipDirection {
@@ -27,52 +18,75 @@ impl ShipDirection {
         self.y = new_y.round() / 100_f32;
     }
 
-    fn count_movement(&self, units: &f32) -> (f32, f32) {
+    fn count_movement(&self, units: f32) -> (f32, f32) {
         (self.x * units, self.y * units)
     }
 }
 
-fn count_travel_distance(data: &str) -> Result<f32, CaptureError> {
-    let re: &Lazy<Regex> = regex!(r"(?P<direction>\w{1})(?P<step>\d+)");
+enum Move {
+    N(i32),
+    S(i32),
+    W(i32),
+    E(i32),
+    L(i32),
+    R(i32),
+    F(i32),
+}
 
-    let res: Vec<&str> = data.lines().collect();
+impl FromStr for Move {
+    type Err = anyhow::Error;
 
-    let start_direction = ShipDirection { x: 1_f32, y: 0_f32 };
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let action = &s[0..1];
+        let value = &s[1..].parse::<i32>()?;
 
-    let final_position = res.iter().try_fold(
-        (0_f32, 0_f32, start_direction),
-        |(x, y, mut direction), action| match re.captures(action) {
-            Some(r) => match &r["direction"] {
-                "N" => Continue((x, y + &r["step"].parse::<f32>().unwrap(), direction)),
-                "S" => Continue((x, y - &r["step"].parse::<f32>().unwrap(), direction)),
-                "W" => Continue((x - &r["step"].parse::<f32>().unwrap(), y, direction)),
-                "E" => Continue((x + &r["step"].parse::<f32>().unwrap(), y, direction)),
-                "L" => {
-                    direction.rotate(r["step"].parse::<f32>().unwrap());
-                    Continue((x, y, direction))
-                },
-                "R" => {
-                    direction.rotate(-r["step"].parse::<f32>().unwrap());
-                    Continue((x, y, direction))
-                },
-                "F" => {
-                    let (x_move, y_move) =
-                        direction.count_movement(&r["step"].parse::<f32>().unwrap());
-                    Continue((x + x_move, y + y_move, direction))
-                },
-                _ => Break(CaptureError::CaptureFailed),
-            },
-            _ => Break(CaptureError::CaptureFailed),
-        },
-    );
-
-    match final_position {
-        Continue(ok) => Ok(ok.0.abs() + ok.1.abs()),
-        Break(err) => Err(err),
+        match action {
+            "N" => Ok(Move::N(*value)),
+            "S" => Ok(Move::S(*value)),
+            "W" => Ok(Move::W(*value)),
+            "E" => Ok(Move::E(*value)),
+            "L" => Ok(Move::L(*value)),
+            "R" => Ok(Move::R(*value)),
+            "F" => Ok(Move::F(*value)),
+            o => Err(anyhow::anyhow!("unknown operation {}", o)),
+        }
     }
 }
 
-fn get_data<P>(path: P) -> io::Result<String>
+fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
+    let res: Vec<Move> = data
+        .lines()
+        .filter_map(|line| line.parse::<Move>().ok())
+        .collect();
+
+    let start_direction = ShipDirection { x: 1_f32, y: 0_f32 };
+
+    let final_position = res.iter().fold(
+        (0_f32, 0_f32, start_direction),
+        |(x, y, mut direction), action| match action {
+            Move::N(v) => (x, y + *v as f32, direction),
+            Move::S(v) => (x, y - *v as f32, direction),
+            Move::W(v) => (x - *v as f32, y, direction),
+            Move::E(v) => (x + *v as f32, y, direction),
+            Move::L(v) => {
+                direction.rotate(*v as f32);
+                (x, y, direction)
+            },
+            Move::R(v) => {
+                direction.rotate(-*v as f32);
+                (x, y, direction)
+            },
+            Move::F(v) => {
+                let (x_move, y_move) = direction.count_movement(*v as f32);
+                (x + x_move, y + y_move, direction)
+            },
+        },
+    );
+
+    Ok(final_position.0.abs() + final_position.1.abs())
+}
+
+fn get_data<P>(path: P) -> anyhow::Result<String>
 where
     P: AsRef<Path>,
 {
@@ -92,14 +106,17 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_case::test_case;
 
-    #[test_case("data_files/ex12.txt" => Ok(25.0))]
-    #[test_case("data_files/ex12_mydata.txt" => Ok(41.84))]
-    #[test_case("data_files/ex12_invalid.txt" => Err(CaptureError::CaptureFailed))]
-    fn test_ex12_count_travel_distance(s: &str) -> Result<f32, CaptureError> {
-        let data = get_data(s).unwrap();
-        count_travel_distance(data.as_str())
+    #[test]
+    fn test_ex12_count_travel_distance() {
+        let data = get_data("data_files/ex12.txt").unwrap();
+        assert_eq!(count_travel_distance(data.as_str()).unwrap(), 25.0);
+
+        let data = get_data("data_files/ex12_mydata.txt").unwrap();
+        assert_eq!(count_travel_distance(data.as_str()).unwrap(), 41.84);
+
+        let data = get_data("data_files/ex12_invalid.txt").unwrap();
+        assert_eq!(count_travel_distance(data.as_str()).unwrap(), 18.0);
     }
 
     #[test]
