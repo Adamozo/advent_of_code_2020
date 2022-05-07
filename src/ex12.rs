@@ -2,13 +2,17 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct ShipDirection {
     x: f32,
     y: f32,
 }
 
 impl ShipDirection {
+    fn new_xy(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
+
     fn rotate(&mut self, angle: f32) {
         let (sin, cos) = angle.to_radians().sin_cos();
         let new_x = (self.x * cos - self.y * sin) * 100_f32;
@@ -23,67 +27,88 @@ impl ShipDirection {
     }
 }
 
+#[derive(Debug, Default)]
+struct Position {
+    x: f32,
+    y: f32,
+    direction: ShipDirection,
+}
+
+impl Position {
+    fn new_with_xy_direction(x: f32, y: f32) -> Self {
+        Self {
+            direction: ShipDirection::new_xy(x, y),
+            ..Default::default()
+        }
+    }
+
+    fn change(&mut self, action: Move) {
+        use Move::*;
+
+        let (x_delta, y_delta) = match action {
+            North(v) | South(v) => (0_f32, v as f32),
+            West(v) | East(v) => (v as f32, 0_f32),
+            Left(v) | Right(v) => {
+                self.direction.rotate(v as f32);
+                (0_f32, 0_f32)
+            },
+            Forward(v) => self.direction.count_movement(v as f32),
+        };
+
+        self.x += x_delta;
+        self.y += y_delta;
+    }
+
+    fn distance(&self) -> f32 {
+        self.x.abs() + self.y.abs()
+    }
+}
+
 enum Move {
-    N(i32),
-    S(i32),
-    W(i32),
-    E(i32),
-    L(i32),
-    R(i32),
-    F(i32),
+    North(i32),
+    South(i32),
+    West(i32),
+    East(i32),
+    Left(i32),
+    Right(i32),
+    Forward(i32),
 }
 
 impl FromStr for Move {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use Move::*;
+
         let action = &s[0..1];
         let value = &s[1..].parse::<i32>()?;
 
         match action {
-            "N" => Ok(Move::N(*value)),
-            "S" => Ok(Move::S(*value)),
-            "W" => Ok(Move::W(*value)),
-            "E" => Ok(Move::E(*value)),
-            "L" => Ok(Move::L(*value)),
-            "R" => Ok(Move::R(*value)),
-            "F" => Ok(Move::F(*value)),
-            o => Err(anyhow::anyhow!("unknown operation {}", o)),
+            "N" => Ok(North(*value)),
+            "S" => Ok(South(-*value)),
+            "W" => Ok(West(-*value)),
+            "E" => Ok(East(*value)),
+            "L" => Ok(Left(*value)),
+            "R" => Ok(Right(-*value)),
+            "F" => Ok(Forward(*value)),
+            _ => Err(anyhow::anyhow!("unknown action {}", action)),
         }
     }
 }
 
 fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
-    let res: Vec<Move> = data
+    let final_position = data
         .lines()
         .filter_map(|line| line.parse::<Move>().ok())
-        .collect();
-
-    let start_direction = ShipDirection { x: 1_f32, y: 0_f32 };
-
-    let final_position = res.iter().fold(
-        (0_f32, 0_f32, start_direction),
-        |(x, y, mut direction), action| match action {
-            Move::N(v) => (x, y + *v as f32, direction),
-            Move::S(v) => (x, y - *v as f32, direction),
-            Move::W(v) => (x - *v as f32, y, direction),
-            Move::E(v) => (x + *v as f32, y, direction),
-            Move::L(v) => {
-                direction.rotate(*v as f32);
-                (x, y, direction)
+        .fold(
+            Position::new_with_xy_direction(1_f32, 0_f32),
+            |mut position, action| {
+                position.change(action);
+                position
             },
-            Move::R(v) => {
-                direction.rotate(-*v as f32);
-                (x, y, direction)
-            },
-            Move::F(v) => {
-                let (x_move, y_move) = direction.count_movement(*v as f32);
-                (x + x_move, y + y_move, direction)
-            },
-        },
-    );
+        );
 
-    Ok(final_position.0.abs() + final_position.1.abs())
+    Ok(final_position.distance())
 }
 
 fn get_data<P>(path: P) -> anyhow::Result<String>
