@@ -26,17 +26,19 @@ pub fn connect_adapters(adapters: &str) -> Result<u64, AdaptersConnectError> {
 
     res.sort_unstable();
 
-    let connected = res
-        .iter()
-        .try_fold((0u16, 0u16, 0u16), |(diff_1,diff_3,prev_val), val| match *val - prev_val {
-            1 => Continue((diff_1 + 1, diff_3, *val)),
-            2 => Continue((diff_1, diff_3, *val)),
-            3 => Continue((diff_1, diff_3 + 1, *val)),
-            _ => Break(AdaptersConnectError::ToBigDifference(prev_val, *val)),
-        });
+    let connected =
+        res.iter().try_fold(
+            (0u16, 0u16, 0u16),
+            |(diff_1, diff_3, prev_val), val| match *val - prev_val {
+                1 => Continue((diff_1 + 1, diff_3, *val)),
+                2 => Continue((diff_1, diff_3, *val)),
+                3 => Continue((diff_1, diff_3 + 1, *val)),
+                _ => Break(AdaptersConnectError::ToBigDifference(prev_val, *val)),
+            },
+        );
 
     match connected {
-        Continue(ok) => Ok((ok.0 * (ok.1+1)).into()),
+        Continue(ok) => Ok((ok.0 * (ok.1 + 1)).into()),
         Break(err) => Err(err),
     }
 }

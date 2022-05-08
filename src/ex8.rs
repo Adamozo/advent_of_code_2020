@@ -95,7 +95,8 @@ where
     let mut operation_num: usize = 0;
 
     while !visited.contains(&operation_num) {
-        let op: Operation = Operation::from_str(load_instruction_num(&path, operation_num)?.as_str())?;
+        let op: Operation =
+            Operation::from_str(load_instruction_num(&path, operation_num)?.as_str())?;
         visited.push(operation_num);
 
         match op {

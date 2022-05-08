@@ -62,9 +62,11 @@ where
     P: AsRef<Path>,
 {
     let data = get_data(path)?;
-    match solve(data.as_str(), 5){
-        SolveResult::InvalidElement(element) =>  println!("Lowest invalid number is is: {}", element),
-        SolveResult::NoInvalidElement => println!("Input does not have invalid element")
+    match solve(data.as_str(), 5) {
+        SolveResult::InvalidElement(element) => {
+            println!("Lowest invalid number is is: {}", element)
+        },
+        SolveResult::NoInvalidElement => println!("Input does not have invalid element"),
     };
     Ok(())
 }

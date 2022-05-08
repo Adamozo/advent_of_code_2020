@@ -68,7 +68,7 @@ where
                     _ => unreachable!(),
                 })
                 .sum();
-            mapper += m;    
+            mapper += m;
             for l in line.split(' ') {
                 let to_check = l.split(':').next().unwrap();
                 mapper += get_mapper_value(to_check);
