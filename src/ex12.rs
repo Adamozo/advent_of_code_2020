@@ -24,36 +24,39 @@ impl ShipDirection {
 }
 
 enum Move {
-    N(i32),
-    S(i32),
-    W(i32),
-    E(i32),
-    L(i32),
-    R(i32),
-    F(i32),
+    North(i32),
+    South(i32),
+    West(i32),
+    East(i32),
+    Left(i32),
+    Right(i32),
+    Forward(i32),
 }
 
 impl FromStr for Move {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use Move::*;
         let action = &s[0..1];
         let value = &s[1..].parse::<i32>()?;
 
         match action {
-            "N" => Ok(Move::N(*value)),
-            "S" => Ok(Move::S(*value)),
-            "W" => Ok(Move::W(*value)),
-            "E" => Ok(Move::E(*value)),
-            "L" => Ok(Move::L(*value)),
-            "R" => Ok(Move::R(*value)),
-            "F" => Ok(Move::F(*value)),
-            o => Err(anyhow::anyhow!("unknown operation {}", o)),
+            "N" => Ok(North(*value)),
+            "S" => Ok(South(*value)),
+            "W" => Ok(West(*value)),
+            "E" => Ok(East(*value)),
+            "L" => Ok(Left(*value)),
+            "R" => Ok(Right(*value)),
+            "F" => Ok(Forward(*value)),
+            _ => return Err(anyhow::anyhow!("unknown action {}", action)),
         }
     }
 }
 
 fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
+    use Move::*;
+
     let res: Vec<Move> = data
         .lines()
         .filter_map(|line| line.parse::<Move>().ok())
@@ -64,19 +67,19 @@ fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
     let final_position = res.iter().fold(
         (0_f32, 0_f32, start_direction),
         |(x, y, mut direction), action| match action {
-            Move::N(v) => (x, y + *v as f32, direction),
-            Move::S(v) => (x, y - *v as f32, direction),
-            Move::W(v) => (x - *v as f32, y, direction),
-            Move::E(v) => (x + *v as f32, y, direction),
-            Move::L(v) => {
+            North(v) => (x, y + *v as f32, direction),
+            South(v) => (x, y - *v as f32, direction),
+            West(v) => (x - *v as f32, y, direction),
+            East(v) => (x + *v as f32, y, direction),
+            Left(v) => {
                 direction.rotate(*v as f32);
                 (x, y, direction)
             },
-            Move::R(v) => {
+            Right(v) => {
                 direction.rotate(-*v as f32);
                 (x, y, direction)
             },
-            Move::F(v) => {
+            Forward(v) => {
                 let (x_move, y_move) = direction.count_movement(*v as f32);
                 (x + x_move, y + y_move, direction)
             },
