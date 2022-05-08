@@ -58,7 +58,7 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("data_files/ex10.txt" => Ok(198))]
+    #[test_case("data_files/ex10.txt" => Ok(220))]
     #[test_case("data_files/ex10_error.txt" => Err(AdaptersConnectError::ToBigDifference(49, 200)))]
     fn test_extract_seat_num(s: &str) -> Result<u64, AdaptersConnectError> {
         let data = get_data(s).unwrap();
