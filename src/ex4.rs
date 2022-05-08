@@ -10,7 +10,7 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn get_index(filed: &str) -> i16 {
+fn _get_index(filed: &str) -> i16 {
     match filed {
         "byr" => 0,
         "iyr" => 1,
@@ -83,7 +83,7 @@ where
     Ok(counter)
 }
 
-fn count_valid_passports<P>(path: P) -> io::Result<usize>
+fn _count_valid_passports<P>(path: P) -> io::Result<usize>
 where
     P: AsRef<Path>,
 {
@@ -101,7 +101,7 @@ where
         } else {
             for l in line.split(' ') {
                 let to_check = l.split(':').next().unwrap();
-                let index = get_index(to_check);
+                let index = _get_index(to_check);
 
                 if index != -1 {
                     mapper[index as usize] = !mapper[index as usize];
@@ -143,6 +143,6 @@ mod tests {
 
     #[test]
     fn test_ex4_count_valid_passports() {
-        assert_eq!(count_valid_passports("data_files/ex4.txt").unwrap(), 2);
+        assert_eq!(_count_valid_passports("data_files/ex4.txt").unwrap(), 2);
     }
 }

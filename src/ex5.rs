@@ -10,14 +10,14 @@ use std::io::BufRead;
 use std::io::{self};
 use std::path::Path;
 
-const MAX_BIT_POS: usize = 9; // "FBFBBFFRLR".len() - 1;
+const _MAX_BIT_POS: usize = 9; // "FBFBBFFRLR".len() - 1;
 
-fn extract_seat_num2(code: &str) -> u32 {
+fn _extract_seat_num2(code: &str) -> u32 {
     code.bytes()
         .enumerate()
         .filter(|(_, b)| *b == b'B' || *b == b'R')
         .fold(0u32, |id, (high_bit_pos, _)| {
-            id | (1 << (MAX_BIT_POS - high_bit_pos))
+            id | (1 << (_MAX_BIT_POS - high_bit_pos))
         })
 }
 
