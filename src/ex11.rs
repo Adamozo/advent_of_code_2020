@@ -17,24 +17,7 @@ enum LocationState {
     Gap,
 }
 
-fn is_any_adjacet_seats_occupied(board: &[Vec<LocationState>], row: &i32, col: &i32) -> bool {
-    (1..=8)
-        .map(|field| match field {
-            1 => (-1, -1),
-            2 => (0, -1),
-            3 => (1, -1),
-            4 => (-1, 0),
-            5 => (1, 0),
-            6 => (-1, 1),
-            7 => (0, 1),
-            8 => (1, 1),
-            _ => unreachable!(),
-        })
-        .filter(|(r, c)| (0..10).contains(&(*r + row)) && (0..10).contains(&(*c + col)))
-        .any(|(r, c)| board[(row + r) as usize][(col + c) as usize] == LocationState::Occupied)
-}
-
-fn change_to_free_needed(board: &[Vec<LocationState>], row: &i32, col: &i32) -> bool {
+fn num_occupied_adjacent_cells(board: &[Vec<LocationState>], row: &i32, col: &i32) -> u8 {
     (1..=8)
         .map(|field| match field {
             1 => (-1, -1),
@@ -53,7 +36,6 @@ fn change_to_free_needed(board: &[Vec<LocationState>], row: &i32, col: &i32) -> 
                 && board[(row + r) as usize][(col + c) as usize] == LocationState::Occupied
         })
         .fold(0, |acc, _x| acc + 1)
-        >= 4
 }
 
 fn update_board2(base_board: &[Vec<LocationState>]) -> (bool, usize, Vec<Vec<LocationState>>) {
@@ -68,9 +50,10 @@ fn update_board2(base_board: &[Vec<LocationState>]) -> (bool, usize, Vec<Vec<Loc
 
     for row in 0..=last_row {
         for col in 0..=last_col {
+            let occupied = num_occupied_adjacent_cells(base_board, &(row as i32), &(col as i32));
             match base_board[row][col] {
                 Empty => {
-                    if !is_any_adjacet_seats_occupied(base_board, &(row as i32), &(col as i32)) {
+                    if occupied == 0 {
                         was_any_seat_changed = true;
                         result_board[row][col] = Occupied;
 
@@ -80,7 +63,7 @@ fn update_board2(base_board: &[Vec<LocationState>]) -> (bool, usize, Vec<Vec<Loc
                     }
                 },
                 Occupied => {
-                    if change_to_free_needed(base_board, &(row as i32), &(col as i32)) {
+                    if occupied >= 4 {
                         was_any_seat_changed = true;
                         result_board[row][col] = Empty;
                     } else {
@@ -137,9 +120,10 @@ fn update_board(
 
     for row in 0..=last_row {
         for col in 0..=last_col {
+            let occupied = num_occupied_adjacent_cells(base_board, &(row as i32), &(col as i32));
             match base_board[row][col] {
                 Empty => {
-                    if !is_any_adjacet_seats_occupied(base_board, &(row as i32), &(col as i32)) {
+                    if occupied == 0 {
                         was_any_seat_changed = true;
                         result_board[row][col] = Occupied;
 
@@ -149,7 +133,7 @@ fn update_board(
                     }
                 },
                 Occupied => {
-                    if change_to_free_needed(base_board, &(row as i32), &(col as i32)) {
+                    if occupied >= 4 {
                         was_any_seat_changed = true;
                         result_board[row][col] = Empty;
                     } else {
