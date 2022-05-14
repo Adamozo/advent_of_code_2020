@@ -16,5 +16,12 @@ fn ex13_benchmark2(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, ex13_benchmark, ex13_benchmark2);
+fn ex13_benchmark3(c: &mut Criterion) {
+    let data = get_data();
+    c.bench_function("min_by_key", |b| {
+        b.iter(|| get_bus_mult_minutes3(data.0, &data.1))
+    });
+}
+
+criterion_group!(benches, ex13_benchmark, ex13_benchmark2, ex13_benchmark3);
 criterion_main!(benches);

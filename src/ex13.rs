@@ -47,6 +47,16 @@ pub fn get_bus_mult_minutes2(arrival_time: u32, buses: &Vec<u32>) -> u32 {
 
 }
 
+pub fn get_bus_mult_minutes3(arrival_time: u32, buses: &Vec<u32>) -> u32 {
+    let (bus_id, waiting_time) = buses
+        .iter()
+        .map(|checked_bus| (checked_bus, checked_bus - (arrival_time % checked_bus)))
+        .min_by_key(|(_, time_for_first_occur)| *time_for_first_occur)
+        .unwrap();
+
+    (waiting_time) * bus_id
+}
+
 pub fn run() -> anyhow::Result<()> {
     let (arrival_time, buses) = get_data();
 
