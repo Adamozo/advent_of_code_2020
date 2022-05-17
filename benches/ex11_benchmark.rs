@@ -18,8 +18,6 @@ fn count_occupied_seats_benchmark_result_board_creation(c: &mut Criterion) {
     });
 }
 
-
-
 criterion_group!(
     benches,
     count_occupied_seats_benchmark_once_allocated,

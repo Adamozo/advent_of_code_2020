@@ -35,7 +35,7 @@ fn num_occupied_adjacent_cells(board: &[Vec<LocationState>], row: &i32, col: &i3
                 && (0..10).contains(&(*c + col))
                 && board[(row + r) as usize][(col + c) as usize] == LocationState::Occupied
         })
-        .fold(0, |acc, _x| acc + 1)
+        .count() as u8
 }
 
 fn update_board2(base_board: &[Vec<LocationState>]) -> (bool, usize, Vec<Vec<LocationState>>) {
@@ -52,26 +52,19 @@ fn update_board2(base_board: &[Vec<LocationState>]) -> (bool, usize, Vec<Vec<Loc
         for col in 0..=last_col {
             let occupied = num_occupied_adjacent_cells(base_board, &(row as i32), &(col as i32));
             match base_board[row][col] {
-                Empty => {
-                    if occupied == 0 {
-                        was_any_seat_changed = true;
-                        result_board[row][col] = Occupied;
-
-                        occupied_seats_num += 1;
-                    } else {
-                        result_board[row][col] = Empty;
-                    }
+                Empty if occupied == 0 => {
+                    result_board[row][col] = Occupied;
+                    was_any_seat_changed = true;
+                    occupied_seats_num += 1;
+                },
+                Occupied if occupied >= 4 => {
+                    result_board[row][col] = Empty;
+                    was_any_seat_changed = true;
                 },
                 Occupied => {
-                    if occupied >= 4 {
-                        was_any_seat_changed = true;
-                        result_board[row][col] = Empty;
-                    } else {
-                        result_board[row][col] = Occupied;
-                        occupied_seats_num += 1;
-                    }
+                    occupied_seats_num += 1;
                 },
-                Gap => continue,
+                _ => {},
             }
         }
     }
@@ -121,27 +114,24 @@ fn update_board(
     for row in 0..=last_row {
         for col in 0..=last_col {
             let occupied = num_occupied_adjacent_cells(base_board, &(row as i32), &(col as i32));
-            match base_board[row][col] {
-                Empty => {
-                    if occupied == 0 {
-                        was_any_seat_changed = true;
-                        result_board[row][col] = Occupied;
 
-                        occupied_seats_num += 1;
-                    } else {
-                        result_board[row][col] = Empty;
-                    }
+            match &base_board[row][col] {
+                Empty if occupied == 0 => {
+                    result_board[row][col] = Occupied;
+                    was_any_seat_changed = true;
+                    occupied_seats_num += 1;
+                },
+                Occupied if occupied >= 4 => {
+                    result_board[row][col] = Empty;
+                    was_any_seat_changed = true;
                 },
                 Occupied => {
-                    if occupied >= 4 {
-                        was_any_seat_changed = true;
-                        result_board[row][col] = Empty;
-                    } else {
-                        result_board[row][col] = Occupied;
-                        occupied_seats_num += 1;
-                    }
+                    occupied_seats_num += 1;
+                    result_board[row][col] = Occupied;
                 },
-                Gap => continue,
+                location => {
+                    result_board[row][col] = location.clone();
+                },
             }
         }
     }
@@ -216,7 +206,10 @@ mod tests {
     #[test_case("data_files/ex11.txt" => (37, 37))]
     fn test_ex11_counter_methods(s: &str) -> (usize, usize) {
         let data = get_data(s).unwrap();
-        (count_occupied_seats(data.as_str()), count_occupied_seats2(data.as_str()))
+        (
+            count_occupied_seats(data.as_str()),
+            count_occupied_seats2(data.as_str()),
+        )
     }
 
     #[test]
