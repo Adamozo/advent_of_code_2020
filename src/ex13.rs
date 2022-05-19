@@ -1,3 +1,22 @@
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+// -----------------------------------------------------------------------------
+
+pub struct Day13VariantA;
+
+impl DaySolver for Day13VariantA {
+    type Output = u32;
+
+    const INFO: DayInfo =
+        DayInfo::with_day_and_file_and_variant("day_13", "data_files/ex13.txt", "n^2");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let (arrival_time, buses) = get_data();
+        Ok(get_bus_mult_minutes2(arrival_time, &buses))
+    }
+}
+
 pub fn get_data() -> (u32, Vec<u32>) {
     let input = "7,13,x,x,59,x,31,19";
     let arrival_time = 939;

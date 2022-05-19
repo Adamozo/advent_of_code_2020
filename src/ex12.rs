@@ -12,7 +12,7 @@ impl DaySolver for Day12 {
 
     const INFO: DayInfo = DayInfo::with_day_and_file("day_12", "data_files/ex12.txt");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> { 
         count_travel_distance(_s)
     }
 }
@@ -44,8 +44,8 @@ impl ShipDirection {
 
 #[derive(Debug, Default)]
 struct Position {
-    x:         f32,
-    y:         f32,
+    x: f32,
+    y: f32,
     direction: ShipDirection,
 }
 
