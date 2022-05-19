@@ -2,6 +2,21 @@ use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+pub struct Day12;
+
+impl DaySolver for Day12 {
+    type Output = f32;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_12", "data_files/ex12.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> { 
+        count_travel_distance(_s)
+    }
+}
+
 #[derive(Debug, Default)]
 struct ShipDirection {
     x: f32,
@@ -96,7 +111,7 @@ impl FromStr for Move {
     }
 }
 
-fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
+pub fn count_travel_distance(data: &str) -> anyhow::Result<f32> {
     let final_position = data
         .lines()
         .filter_map(|line| line.parse::<Move>().ok())
