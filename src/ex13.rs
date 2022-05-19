@@ -30,8 +30,8 @@ pub fn get_data() -> (u32, Vec<u32>) {
     (arrival_time, buses)
 }
 
-pub fn get_bus_mult_minutes(arrival_time: u32, buses: &Vec<u32>) -> u32 {
-    let mut i = arrival_time.clone();
+pub fn get_bus_mult_minutes(arrival_time: u32, buses: &[u32]) -> u32 {
+    let mut i = arrival_time;
 
     let (bus_id, minute) = loop {
         let available_bus = buses.iter().find(|bus| i % *bus == 0);
@@ -46,7 +46,7 @@ pub fn get_bus_mult_minutes(arrival_time: u32, buses: &Vec<u32>) -> u32 {
     (minute - arrival_time) * bus_id
 }
 
-pub fn get_bus_mult_minutes2(arrival_time: u32, buses: &Vec<u32>) -> u32 {
+pub fn get_bus_mult_minutes2(arrival_time: u32, buses: &[u32]) -> u32 {
     let (bus_id, waiting_time) = buses.iter().fold(
         (std::u32::MAX, std::u32::MAX),
         |(bus_id, offset), checked_bus| {
@@ -66,7 +66,7 @@ pub fn get_bus_mult_minutes2(arrival_time: u32, buses: &Vec<u32>) -> u32 {
 
 }
 
-pub fn get_bus_mult_minutes3(arrival_time: u32, buses: &Vec<u32>) -> u32 {
+pub fn get_bus_mult_minutes3(arrival_time: u32, buses: &[u32]) -> u32 {
     let (bus_id, waiting_time) = buses
         .iter()
         .map(|checked_bus| (checked_bus, checked_bus - (arrival_time % checked_bus)))
