@@ -14,7 +14,7 @@ impl DaySolver for Day10 {
 
     const INFO: DayInfo = DayInfo::with_day_and_file("day_10", "data_files/ex10.txt");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> { 
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         connect_adapters(_s)
     }
 }
@@ -79,8 +79,6 @@ mod tests {
     //     let data = get_data(s).unwrap();
     //     connect_adapters(data.as_str())
     // }
-
-    
 
     #[test]
     fn test_ex10_run_no_file() {
