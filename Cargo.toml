@@ -11,6 +11,7 @@ lazy-regex = "2.3.0"
 thiserror = "1.0.30"
 anyhow = "1.0.56"
 aoc_utils = { path = "./aoc_utils"}
+text_io = "0.1.10"
 
 [dev-dependencies]
 test-case = "2.0.0"

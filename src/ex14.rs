@@ -1,10 +1,62 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 use std::collections::HashMap;
+use std::str::FromStr;
 
-pub struct Day14;
+pub struct Day14VariantB;
 
-impl DaySolver for Day14 {
+impl DaySolver for Day14VariantB {
+    type Output = u64;
+
+    const INFO: DayInfo =
+        DayInfo::with_day_and_file_and_variant("day_14", "data_files/ex14.txt", "two vectors");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        use Instruction::*;
+        let mut set = 0;
+        let mut unset = 0;
+
+        let mut addresses: Vec<u64> = Vec::new();
+        let mut values: Vec<u64> = Vec::new();
+
+        let mut sum: u64 = 0;
+
+        for line in _s.lines() {
+            match line.parse::<Instruction>()? {
+                Mask(mask) => {
+                    (set, unset) = process_mask(&mask)?;
+                },
+                Mem(address, value) => {
+                    if let Some(index) = addresses.iter().position(|&x| x == address) {
+                        let mut to_add = value;
+                        to_add |= set;
+                        to_add &= unset;
+
+                        sum -= values[index];
+
+                        values[index] = to_add;
+                        sum += to_add;
+                    } else {
+                        addresses.push(address);
+                        let mut to_add = value;
+                        to_add |= set;
+                        to_add &= unset;
+
+                        values.push(to_add);
+
+                        sum += to_add;
+                    }
+                },
+            }
+        }
+
+        Ok(sum)
+    }
+}
+
+pub struct Day14VariantA;
+
+impl DaySolver for Day14VariantA {
     type Output = u64;
 
     const INFO: DayInfo =
@@ -67,4 +119,62 @@ pub fn process_mask(mask: &str) -> anyhow::Result<(u64, u64)> {
             }
         });
     Ok((set as u64, !unset as u64))
+}
+
+enum Instruction {
+    Mask(String),
+    Mem(u64, u64),
+}
+
+impl FromStr for Instruction {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use text_io::try_scan;
+
+        let instruction = if s.starts_with("ma") {
+            let mask: String;
+
+            try_scan!(s.bytes() => "mask = {}", mask);
+
+            Self::Mask(mask.trim().parse()?)
+        } else {
+            let address_value: u64;
+            let mem_value: u64;
+
+            try_scan!(s.bytes() => "mem[{}] = {}", address_value, mem_value);
+
+            Self::Mem(address_value, mem_value)
+        };
+
+        Ok(instruction)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn ex14_process_mask() {
+        let result = process_mask("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X").unwrap();
+        assert_eq!((result.0, !result.1), (64, 2));
+    }
+
+    #[test]
+    fn ex14_process_input() {
+        use aoc_utils::read_to_string;
+        let dict: HashMap<u64, u64> = HashMap::from([(7, 101), (8, 0)]);
+        assert_eq!(
+            prepare_input(&read_to_string("data_files/ex14.txt").unwrap()).unwrap(),
+            (64, 18446744073709551613, dict)
+        );
+    }
+
+    #[test]
+    fn data_from_default_file() {
+        assert_eq!(Day14VariantA::solve_default_file().unwrap(), 165);
+        assert_eq!(Day14VariantB::solve_default_file().unwrap(), 165)
+    }
 }
