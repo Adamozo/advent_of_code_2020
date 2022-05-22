@@ -11,48 +11,52 @@ impl DaySolver for Day14VariantB {
     const INFO: DayInfo =
         DayInfo::with_day_and_file_and_variant("day_14", "data_files/ex14.txt", "two vectors");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        use Instruction::*;
-        let mut set = 0;
-        let mut unset = 0;
-
-        let mut addresses: Vec<u64> = Vec::new();
-        let mut values: Vec<u64> = Vec::new();
-
-        let mut sum: u64 = 0;
-
-        for line in _s.lines() {
-            match line.parse::<Instruction>()? {
-                Mask(mask) => {
-                    (set, unset) = process_mask(&mask)?;
-                },
-                Mem(address, value) => {
-                    if let Some(index) = addresses.iter().position(|&x| x == address) {
-                        let mut to_add = value;
-                        to_add |= set;
-                        to_add &= unset;
-
-                        sum -= values[index];
-
-                        values[index] = to_add;
-                        sum += to_add;
-                    } else {
-                        addresses.push(address);
-                        let mut to_add = value;
-                        to_add |= set;
-                        to_add &= unset;
-
-                        values.push(to_add);
-
-                        sum += to_add;
-                    }
-                },
-            }
-        }
+    fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let sum = s
+            .lines()
+            .filter_map(|line| line.parse::<Instruction>().ok())
+            .fold(Processor::default(), |mut processor, instruction| {
+                processor.process(instruction);
+                processor
+            })
+            .output_value();
 
         Ok(sum)
     }
 }
+
+// -----------------------------------------------------------------------------
+
+type MemAddress = u64;
+type MemValue = u64;
+type MaskValue = u64;
+
+#[derive(Default)]
+struct Processor {
+    mem: HashMap<MemAddress, MemValue>,
+    set: MaskValue,
+    unset: MaskValue,
+}
+
+impl Processor {
+    fn process(&mut self, instruction: Instruction) {
+        match instruction {
+            Instruction::Mask(mask_set, mask_unset) => {
+                self.set = mask_set;
+                self.unset = mask_unset;
+            },
+            Instruction::Mem(address, value) => {
+                self.mem.insert(address, value & self.unset | self.set);
+            },
+        }
+    }
+
+    fn output_value(&self) -> u64 {
+        self.mem.values().sum::<u64>()
+    }
+}
+
+// -----------------------------------------------------------------------------
 
 pub struct Day14VariantA;
 
@@ -79,16 +83,16 @@ impl DaySolver for Day14VariantA {
     }
 }
 
-pub fn prepare_input(_s: &str) -> anyhow::Result<(u64, u64, HashMap<u64, u64>)> {
-    let input_lines: Vec<&str> = _s.lines().collect();
-    let mask: &str = input_lines[0].split(" = ").nth(1).unwrap();
+pub fn prepare_input(s: &str) -> anyhow::Result<(u64, u64, HashMap<u64, u64>)> {
+    let mut input_lines = s.lines();
+    let mask: &str = input_lines.next().unwrap().split(" = ").nth(1).unwrap();
 
     let mut memorized: HashMap<u64, u64> = HashMap::new();
 
-    for i in 1..input_lines.len() {
-        let splited_line: Vec<&str> = input_lines[i].split(" = ").collect();
-        let num = splited_line[1].parse::<u64>()?;
-        let key = splited_line[0]
+    for line in input_lines {
+        let (key_part, value_part) = line.split_once(" = ").unwrap();
+        let num = value_part.parse::<u64>()?;
+        let key = key_part
             .split('[')
             .nth(1)
             .unwrap()
@@ -122,7 +126,7 @@ pub fn process_mask(mask: &str) -> anyhow::Result<(u64, u64)> {
 }
 
 enum Instruction {
-    Mask(String),
+    Mask(u64, u64),
     Mem(u64, u64),
 }
 
@@ -137,7 +141,8 @@ impl FromStr for Instruction {
 
             try_scan!(s.bytes() => "mask = {}", mask);
 
-            Self::Mask(mask.trim().parse()?)
+            let (set, unset) = process_mask(mask.trim())?;
+            Self::Mask(set, unset)
         } else {
             let address_value: u64;
             let mem_value: u64;
