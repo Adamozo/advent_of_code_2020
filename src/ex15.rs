@@ -1,6 +1,8 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 
+pub const SIZE: usize = 100_000;
+
 pub struct Day15VersionA;
 
 impl DaySolver for Day15VersionA {
@@ -21,7 +23,7 @@ impl DaySolver for Day15VersionA {
 
         let (_, start_value) = turns.pop().unwrap();
 
-        let res = (turns.len() + 1..2020).fold(start_value, |new_num, turn_num| {
+        let res = (turns.len() + 1..SIZE).fold(start_value, |new_num, turn_num| {
             match turns.iter().position(|&(_, num)| num == new_num) {
                 None => {
                     turns.push((turn_num, new_num));

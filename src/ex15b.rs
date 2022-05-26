@@ -1,3 +1,4 @@
+use super::ex15::SIZE;
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 use std::collections::HashMap;
@@ -14,7 +15,7 @@ impl DaySolver for Day15VersionB {
         let mut turns: HashMap<u32, usize> = HashMap::new();
         let start_value = insert_init_values(&mut turns, _s)?;
 
-        let res = (turns.len() + 1..2020).fold(start_value, |new_num, turn_num| {
+        let res = (turns.len() + 1..SIZE).fold(start_value, |new_num, turn_num| {
             match turns.get(&new_num) {
                 None => {
                     turns.insert(new_num, turn_num);
