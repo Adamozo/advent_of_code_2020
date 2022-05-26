@@ -1,42 +1,44 @@
-use std::collections::HashMap;
-
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
+use std::collections::HashMap;
 
 pub struct Day15VersionB;
 
 impl DaySolver for Day15VersionB {
     type Output = u32;
 
-    const INFO: DayInfo =
-        DayInfo::with_day_and_file_and_variant("day_15", "data_files/ex15.txt", "hash map");
+    const INFO: DayInfo = <super::ex15::Day15VersionA as DaySolver>::INFO
+        .copy_with_different_variant_name("hash map");
 
     fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        // let mut turns: HashMap<usize, u32> = _s
-        //     .split(',')
-        //     .enumerate()
-        //     .map(|(turn_num, value)| (turn_num + 1, value.parse::<u32>().unwrap()))
-        //     .collect();
+        let mut turns: HashMap<u32, usize> = HashMap::new();
+        let start_value = insert_init_values(&mut turns, _s)?;
 
-        // let start_value = turns[turns.len() - 1].1;
-        // turns.remove(turns.len() - 1);
+        let res = (turns.len() + 1..2020).fold(start_value, |new_num, turn_num| {
+            match turns.get(&new_num) {
+                None => {
+                    turns.insert(new_num, turn_num);
+                    0
+                },
+                Some(previous_turn) => {
+                    let next_value = (turn_num - previous_turn) as u32;
+                    turns.insert(new_num, turn_num);
+                    next_value
+                },
+            }
+        });
 
-        // let res = (turns.len() + 1..2020).fold(start_value, |new_num, turn_num| {
-        //     match turns.iter().position(|&(_, num)| num == new_num) {
-        //         None => {
-        //             turns.push((turn_num, new_num));
-        //             0
-        //         },
-        //         Some(index) => {
-        //             let next_value = (turn_num - turns[index].0) as u32;
-        //             turns[index] = (turn_num, new_num);
-        //             next_value
-        //         },
-        //     }
-        // });
-
-        Ok(1)
+        Ok(res)
     }
+}
+
+fn insert_init_values(turns: &mut HashMap<u32, usize>, input: &str) -> anyhow::Result<u32> {
+    let mut last = 0;
+    for (turn_num, value) in input.split(',').enumerate() {
+        last = value.parse::<u32>()?;
+        turns.insert(last, turn_num + 1);
+    }
+    Ok(turns.remove_entry(&last).unwrap().0)
 }
 
 #[cfg(test)]
