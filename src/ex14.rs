@@ -3,28 +3,6 @@ use aoc_utils::DaySolver;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-pub struct Day14VariantB;
-
-impl DaySolver for Day14VariantB {
-    type Output = u64;
-
-    const INFO: DayInfo =
-        DayInfo::with_day_and_file_and_variant("day_14", "data_files/ex14.txt", "two vectors");
-
-    fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let sum = s
-            .lines()
-            .filter_map(|line| line.parse::<Instruction>().ok())
-            .fold(Processor::default(), |mut processor, instruction| {
-                processor.process(instruction);
-                processor
-            })
-            .output_value();
-
-        Ok(sum)
-    }
-}
-
 // -----------------------------------------------------------------------------
 
 type MemAddress = u64;
@@ -32,14 +10,14 @@ type MemValue = u64;
 type MaskValue = u64;
 
 #[derive(Default)]
-struct Processor {
-    mem: HashMap<MemAddress, MemValue>,
-    set: MaskValue,
+pub struct Processor {
+    mem:   HashMap<MemAddress, MemValue>,
+    set:   MaskValue,
     unset: MaskValue,
 }
 
 impl Processor {
-    fn process(&mut self, instruction: Instruction) {
+    pub fn process(&mut self, instruction: Instruction) {
         match instruction {
             Instruction::Mask(mask_set, mask_unset) => {
                 self.set = mask_set;
@@ -51,7 +29,7 @@ impl Processor {
         }
     }
 
-    fn output_value(&self) -> u64 {
+    pub fn output_value(&self) -> u64 {
         self.mem.values().sum::<u64>()
     }
 }
@@ -97,7 +75,7 @@ pub fn prepare_input(s: &str) -> anyhow::Result<(u64, u64, HashMap<u64, u64>)> {
             .nth(1)
             .unwrap()
             .split(']')
-            .nth(0)
+            .next()
             .unwrap()
             .parse::<u64>()?;
         memorized.insert(key, num);
@@ -125,7 +103,7 @@ pub fn process_mask(mask: &str) -> anyhow::Result<(u64, u64)> {
     Ok((set as u64, !unset as u64))
 }
 
-enum Instruction {
+pub enum Instruction {
     Mask(u64, u64),
     Mem(u64, u64),
 }
@@ -179,7 +157,6 @@ mod tests {
 
     #[test]
     fn data_from_default_file() {
-        assert_eq!(Day14VariantA::solve_default_file().unwrap(), 165);
-        assert_eq!(Day14VariantB::solve_default_file().unwrap(), 165)
+        assert_eq!(Day14VariantA::solve_default_file().unwrap(), 165)
     }
 }

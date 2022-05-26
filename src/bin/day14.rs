@@ -1,4 +1,5 @@
-use advent_of_code::ex14::{Day14VariantA, Day14VariantB};
+use advent_of_code::ex14::Day14VariantA;
+use advent_of_code::ex14b::Day14VariantB;
 use aoc_utils::DaySolver;
 
 fn main() {
