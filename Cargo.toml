@@ -10,13 +10,13 @@ regex = "1"
 lazy-regex = "2.3.0"
 thiserror = "1.0.30"
 anyhow = "1.0.56"
-aoc_utils = { path = "D:/mentoring/rust/advent_of_code/aoc_utils"}
+aoc_utils = { path = "aoc_utils"}
 
 [dev-dependencies]
 test-case = "2.0.0"
 criterion = "0.3.5"
 
 [[bench]]
-name = "ex6benchmark"
-path = "./benches/ex6benchmark.rs"
+name = "ex15benchmark"
+path = "benches/ex15_benchmark.rs"
 harness = false
