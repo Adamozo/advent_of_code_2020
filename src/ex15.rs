@@ -7,7 +7,7 @@ impl DaySolver for Day15 {
     type Output = u32;
 
     const INFO: DayInfo =
-        DayInfo::with_day_and_file_and_variant("day_15", "data_files/ex15.txt", "base");
+        DayInfo::with_day_and_file_and_variant("day_15", "data_files/ex15.txt", "vector with tuple");
 
     fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         let mut turns: Vec<(usize, u32)> = _s
@@ -16,8 +16,7 @@ impl DaySolver for Day15 {
             .map(|(turn_num, value)| (turn_num + 1, value.parse::<u32>().unwrap()))
             .collect();
 
-        let start_value = turns[turns.len() - 1].1;
-        turns.remove(turns.len() - 1);
+        let (_, start_value) = turns.pop().unwrap();
 
         let res = (turns.len() + 1..2020).fold(start_value, |new_num, turn_num| {
             match turns.iter().position(|&(_, num)| num == new_num) {
