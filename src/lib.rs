@@ -4,6 +4,7 @@ pub mod ex11;
 pub mod ex12;
 pub mod ex13;
 pub mod ex15;
+pub mod ex15b;
 pub mod ex2;
 pub mod ex3;
 pub mod ex4;
