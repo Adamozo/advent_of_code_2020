@@ -1,7 +1,7 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 
-pub const SIZE: usize = 100_000;
+pub const SIZE: usize = 2020;
 
 pub struct Day15VersionA;
 

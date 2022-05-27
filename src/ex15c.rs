@@ -14,38 +14,37 @@ impl DaySolver for Day15VersionC {
     );
 
     fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let mut turns: Vec<u32> = vec![0; SIZE];
-        let start_index = insert_init_values(&mut turns, _s)?;
+        let mut turns: Vec<usize> = vec![0; SIZE];
+        let (start_index, start_value) = insert_init_values(&mut turns, _s)?;
 
-        let res = (start_index + 1..SIZE).fold(turns[start_index], |new_num, turn_num| match turns
-            .iter()
-            .rev()
-            .skip(turns.len() - turn_num + 1)
-            .position(|&num| num == new_num)
-        {
-            None => {
-                turns[turn_num - 1] = new_num;
+        let res = (start_index..SIZE).fold(start_value, |new_num, turn_num| match turns[new_num] {
+            0 => {
+                turns[new_num] = turn_num;
                 0
             },
-            Some(index) => {
-                let next_value = (index + 1) as u32;
-                turns[turn_num - 1] = new_num;
-                next_value
+
+            turn => {
+                turns[new_num] = turn_num;
+                turn_num - turn
             },
         });
 
-        Ok(res)
+        Ok(res as u32)
     }
 }
 
-fn insert_init_values(turns: &mut [u32], input: &str) -> anyhow::Result<usize> {
+fn insert_init_values(turns: &mut [usize], input: &str) -> anyhow::Result<(usize, usize)> {
+    let mut last_value = 0;
     let mut last_index = 0;
     for (index, value) in input.split(',').enumerate() {
-        turns[index] = value.parse::<u32>()?;
-        last_index = index;
+        last_value = value.parse::<usize>()?;
+        last_index = index + 1;
+        turns[last_value] = last_index;
     }
 
-    Ok(last_index)
+    turns[last_value] = 0;
+
+    Ok((last_index, last_value))
 }
 
 #[cfg(test)]
