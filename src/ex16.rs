@@ -17,42 +17,27 @@ impl DaySolver for Day16 {
         DayInfo::with_day_and_file_and_variant("day_16", "data_files/ex16.txt", "base");
 
     fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
-        use super::ex16::InputState::*;
+        let (classes_section, nearby_tickets_section) = {
+            let mut sections = _s.split(INPUT_SECTION_DELIMETER);
 
-        let (_, error_rate) = _s
-            .split(INPUT_SECTION_DELIMETER)
-            .enumerate()
-            .filter(|(index, _)| *index != 1)
-            .map(|(index, section_content)| match index {
-                0 => Ranges(section_content.to_string()),
-                2 => Tickets(section_content.to_string()),
-                _ => unreachable!(),
+            (sections.next().unwrap(), {
+                sections.next(); // skip "your ticket section"
+                sections.next().unwrap()
             })
-            .fold(
-                (FieldsRanges::new(), 0u32),
-                |(ranges, error_rate), section| match section {
-                    Ranges(content) => (content.parse::<FieldsRanges>().unwrap(), error_rate),
-                    Tickets(content) => {
-                        let result = content
-                            .lines()
-                            .skip(1)
-                            .map(|ticket| ranges.count_ticket_error_rate(ticket))
-                            .sum();
-                        (ranges, result)
-                    },
-                },
-            );
+        };
 
-        Ok(error_rate)
+        let fields_ranges = classes_section.parse::<FieldsRanges>()?;
+
+        let result = nearby_tickets_section
+            .lines()
+            .skip(1)
+            .map(|ticket| fields_ranges.count_ticket_error_rate(ticket))
+            .sum();
+
+        Ok(result)
     }
 }
 
-enum InputState {
-    Ranges(String),
-    Tickets(String),
-}
-
-#[derive(Default)]
 struct FieldsRanges {
     available_ranges: AvailableRanges,
 }
@@ -87,10 +72,6 @@ impl FieldsRanges {
             .map(|num| num.parse::<u32>().unwrap())
             .filter(|value| !self.is_in_any_range(value))
             .sum()
-    }
-
-    fn new() -> Self {
-        Default::default()
     }
 }
 
