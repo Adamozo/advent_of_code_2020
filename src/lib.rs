@@ -8,6 +8,7 @@ pub mod ex14b;
 pub mod ex15;
 pub mod ex15b;
 pub mod ex15c;
+pub mod ex16;
 pub mod ex2;
 pub mod ex3;
 pub mod ex4;
