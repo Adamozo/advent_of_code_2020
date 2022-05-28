@@ -10,6 +10,7 @@ regex = "1"
 lazy-regex = "2.3.0"
 thiserror = "1.0.30"
 anyhow = "1.0.56"
+text_io = "0.1.10"
 aoc_utils = { path = "aoc_utils"}
 
 [dev-dependencies]
