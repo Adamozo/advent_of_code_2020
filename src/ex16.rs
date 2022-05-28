@@ -6,7 +6,6 @@ use std::str::FromStr;
 pub struct Day16;
 
 type AvailableRanges = Vec<RangeInclusive<u32>>;
-type InputSections = Vec<String>;
 type FieldValue = u32;
 
 const INPUT_SECTION_DELIMETER: &str = "\r\n\r\n";
@@ -17,38 +16,45 @@ impl DaySolver for Day16 {
     const INFO: DayInfo =
         DayInfo::with_day_and_file_and_variant("day_16", "data_files/ex16.txt", "base");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let input_sections: InputSections = _s
+    fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
+        use super::ex16::InputState::*;
+
+        let (_, error_rate) = _s
             .split(INPUT_SECTION_DELIMETER)
-            .map(|section| section.to_string())
-            .collect();
+            .enumerate()
+            .filter(|(index, _)| *index != 1)
+            .map(|(index, section_content)| match index {
+                0 => Ranges(section_content.to_string()),
+                2 => Tickets(section_content.to_string()),
+                _ => unreachable!(),
+            })
+            .fold(
+                (FieldsRanges::new(), 0u32),
+                |(ranges, error_rate), section| match section {
+                    Ranges(content) => (content.parse::<FieldsRanges>().unwrap(), error_rate),
+                    Tickets(content) => {
+                        let result = content
+                            .lines()
+                            .skip(1)
+                            .map(|ticket| ranges.count_ticket_error_rate(ticket))
+                            .sum();
+                        (ranges, result)
+                    },
+                },
+            );
 
-        let fields_ranges = input_sections[0].parse::<FieldsRanges>()?;
-
-        let result = input_sections[2]
-            .lines()
-            .skip(1)
-            .map(|ticket| fields_ranges.count_ticket_error_rate(ticket))
-            .sum();
-
-        Ok(result)
+        Ok(error_rate)
     }
 }
 
-struct FieldsRanges {
-    available_ranges: AvailableRanges,
+enum InputState {
+    Ranges(String),
+    Tickets(String),
 }
 
-fn extract_ranges(line: &str) -> AvailableRanges {
-    let extract_ranges: AvailableRanges = line
-        .split(" or ")
-        .map(|field| {
-            let (start, end) = field.split_once('-').unwrap();
-            start.parse::<u32>().unwrap()..=end.parse::<u32>().unwrap()
-        })
-        .collect();
-
-    extract_ranges
+#[derive(Default)]
+struct FieldsRanges {
+    available_ranges: AvailableRanges,
 }
 
 impl FromStr for FieldsRanges {
@@ -57,7 +63,12 @@ impl FromStr for FieldsRanges {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let available_ranges: AvailableRanges = s
             .lines()
-            .flat_map(|line| extract_ranges(line.split_once(": ").unwrap().1))
+            .flat_map(|line| {
+                line.split_once(": ").unwrap().1.split(" or ").map(|field| {
+                    let (start, end) = field.split_once('-').unwrap();
+                    start.parse::<u32>().unwrap()..=end.parse::<u32>().unwrap()
+                })
+            })
             .collect();
 
         Ok(FieldsRanges { available_ranges })
@@ -76,6 +87,10 @@ impl FieldsRanges {
             .map(|num| num.parse::<u32>().unwrap())
             .filter(|value| !self.is_in_any_range(value))
             .sum()
+    }
+
+    fn new() -> Self {
+        Default::default()
     }
 }
 
@@ -113,12 +128,6 @@ mod tests {
 
         let ranges = input.parse::<FieldsRanges>().unwrap();
         ranges.count_ticket_error_rate(ticket)
-    }
-
-    #[test]
-    fn ex16_extract_ranges() {
-        let input = "1-3 or 5-7";
-        assert_eq!(extract_ranges(input), vec![1..=3, 5..=7]);
     }
 
     #[test]
