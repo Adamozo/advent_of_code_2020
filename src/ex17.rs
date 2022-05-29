@@ -37,10 +37,10 @@ type Grid2DBody = Vec<Vec<CubeState>>;
 
 #[derive(Debug, PartialEq)]
 struct Grid3D {
-    body:    GridBody,
+    body: GridBody,
     columns: usize,
-    rows:    usize,
-    depth:   usize,
+    rows: usize,
+    depth: usize,
 }
 
 impl FromStr for Grid3D {

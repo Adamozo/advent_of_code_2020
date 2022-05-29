@@ -13,6 +13,9 @@ anyhow = "1.0.56"
 text_io = "0.1.10"
 aoc_utils = { path = "aoc_utils"}
 
+mimalloc-rust = "^0.2"
+fnv = "^1.0"
+
 [dev-dependencies]
 test-case = "2.0.0"
 criterion = "0.3.5"
@@ -20,4 +23,9 @@ criterion = "0.3.5"
 [[bench]]
 name = "ex15benchmark"
 path = "benches/ex15_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "ex17benchmark"
+path = "benches/ex17_benchmark.rs"
 harness = false
