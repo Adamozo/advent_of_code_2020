@@ -76,12 +76,12 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("data_files/ex9.txt" => SolveResult::InvalidElement(127))]
-    #[test_case("data_files/ex9_no_invalid.txt" => SolveResult::NoInvalidElement)]
-    fn test_solve(s: &str) -> SolveResult {
-        let data = get_data(s).unwrap();
-        solve(data.as_str(), 5)
-    }
+    // #[test_case("data_files/ex9.txt" => SolveResult::InvalidElement(127))]
+    // #[test_case("data_files/ex9_no_invalid.txt" => SolveResult::NoInvalidElement)]
+    // fn test_solve(s: &str) -> SolveResult {
+    //     let data = get_data(s).unwrap();
+    //     solve(data.as_str(), 5)
+    // }
 
     #[test_case(vec![1,2,3], &10 => false)]
     #[test_case(vec![1,2,3], &5 => true)]
@@ -92,10 +92,5 @@ mod tests {
     #[test]
     fn test_ex9_run_no_file() {
         assert!(run("aaa").is_err())
-    }
-
-    #[test]
-    fn test_ex9_run_file_exists() {
-        assert!(!run("data_files/ex9.txt").is_err())
     }
 }
