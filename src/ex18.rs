@@ -37,29 +37,19 @@ enum Component {
 }
 
 fn is_operator(element: &str) -> bool {
-    if element == "*" || element == "+" {
-        return true;
-    }
-
-    false
+    element == "*" || element == "+"
 }
 
 fn get_operator(element: &str) -> Component {
-    if element == "*" {
-        return Component::Multiply;
+    match element {
+        "*" => Component::Multiply,
+        "+" => Component::Sum,
+        _ => unreachable!(),
     }
-
-    Component::Sum
 }
 
 fn pop_two(vector: &mut Vec<u32>) -> (u32, u32) {
-    let size = vector.len();
-
-    let res = (vector[size - 1], vector[size - 2]);
-    vector.remove(size - 1);
-    vector.remove(size - 2);
-
-    res
+    (vector.pop().unwrap(), vector.pop().unwrap())
 }
 
 struct Evaluator {
@@ -74,7 +64,7 @@ impl FromStr for Evaluator {
         let mut postfix: Vec<Component> = Vec::new();
         let mut stack: Vec<Component> = Vec::new();
 
-        for ch in s.split(' ') {
+        for ch in s.split(' ').filter(|&element| element.len() > 0) {
             if ch == "(" {
                 stack.push(Component::LeftBracket);
             } else if ch == ")" {
