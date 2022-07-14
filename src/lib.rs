@@ -11,6 +11,7 @@ pub mod ex15c;
 pub mod ex16;
 pub mod ex17;
 pub mod ex17other;
+pub mod ex19;
 pub mod ex2;
 pub mod ex3;
 pub mod ex4;
