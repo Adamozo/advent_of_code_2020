@@ -64,7 +64,7 @@ impl FromStr for Evaluator {
         let mut postfix: Vec<Component> = Vec::new();
         let mut stack: Vec<Component> = Vec::new();
 
-        for ch in s.split(' ').filter(|&element| element.len() > 0) {
+        for ch in s.split(' ').filter(|&element| !element.is_empty()) {
             if ch == "(" {
                 stack.push(Component::LeftBracket);
             } else if ch == ")" {
