@@ -10,6 +10,7 @@ dependencies = [
  "aoc_utils",
  "criterion",
  "fnv",
+ "itertools",
  "lazy-regex",
  "regex",
  "test-case",

@@ -13,6 +13,7 @@ anyhow = "^1.0.56"
 text_io = "^0.1.10"
 aoc_utils = { path = "./aoc_utils"}
 fnv = "^1.0"
+itertools = "^0.10.3"
 
 [dev-dependencies]
 test-case = "^2.0.0"
