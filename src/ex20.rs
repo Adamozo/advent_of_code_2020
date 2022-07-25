@@ -5,6 +5,7 @@ use itertools::{Itertools, Permutations};
 use std::fmt;
 use std::str::FromStr;
 use text_io::scan;
+use fnv::FnvHashMap as HashMap;
 
 pub struct Day20;
 
@@ -19,11 +20,16 @@ impl DaySolver for Day20 {
 
     fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
         let grid = _s.parse::<Grid>()?;
-        let res = grid.solve().unwrap();
+
+        let mut pn = PossibleNeighborhoods::new();
+        pn.fill(&grid.domains);
+
+        let res = grid.solve(&pn).unwrap();
 
         Ok(res)
     }
 }
+
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum TileStage {
@@ -85,8 +91,8 @@ impl Grid {
         self.domains.iter().permutations(self.domains.len())
     }
 
-    fn solve(&self) -> Option<u128> {
-        for grid in self.placement_permutations() {
+    fn solve(&self, possible_neighborhoods: &PossibleNeighborhoods) -> Option<u128> {
+        for grid in self.placement_permutations().filter(|permutation| possible_neighborhoods.can_be_sollution(permutation)) {
             match recur_solver(
                 &grid,
                 &mut (0..9).into_iter().map(|_| Tile::new()).collect(),
@@ -118,7 +124,7 @@ fn recur_solver(
                 return Some(board[0].id * board[2].id * board[6].id * board[8].id);
             }
 
-            match recur_solver(domanins, board, current_index + 1) {
+            match recur_solver(domanins, board, current_index+1) {
                 None => {
                     continue;
                 },
@@ -146,6 +152,79 @@ fn can_insert(board: &[Tile], index: usize, tile: &Tile) -> bool {
         _ => unreachable!(),
     }
 }
+
+struct PossibleNeighborhoods {
+    body: HashMap<u128, Vec<u128>>, // tile.id | vec[tile.id, tile.id]
+    possible_center: Vec<u128> 
+}
+
+impl PossibleNeighborhoods {
+    fn add(&mut self, checked: &Tile, new_neighbour: &Tile) {
+        let checked_id = checked.id;
+        let new_neighbour_id = new_neighbour.id;
+
+        if checked_id != new_neighbour_id {
+            for i in checked.get_permutations() {
+                if i.boarder_values().into_iter().any(|value_i| new_neighbour.boarder_values().into_iter().any(|value_j| value_i == value_j)) {
+                    match self.body.get_mut(&checked_id) {
+                        None => {
+                            self.body.insert(checked_id, vec![new_neighbour_id]);
+                        },
+                        Some(v) => {
+                            v.push(new_neighbour_id);
+                        }
+                    };
+
+                    return ;
+                }
+            }
+        }
+    }
+
+    fn generate_possible_centers(&mut self) {
+        for key in self.body.keys() {
+            if self.body.get(key).unwrap().len() >= 4 {
+                self.possible_center.push(*key);
+            }
+        }
+    }
+
+    fn can_be_sollution(&self, grid: &Vec<&Vec<Tile>>) -> bool{
+        let center_id = &grid[4][0].id;
+
+        if !self.possible_center.contains(center_id) {
+            return false;
+        }
+
+        let center_neighbors = self.body.get(center_id).unwrap();
+        
+        if [&grid[1][0].id, &grid[3][0].id, &grid[5][0].id, &grid[7][0].id].into_iter().any(|tile_id| !center_neighbors.contains(tile_id)) {
+            return false;
+        }
+
+        true
+    }
+
+    fn new() -> Self {
+        let body: HashMap<u128, Vec<u128>> = HashMap::default();
+        let possible_center = Vec::new();
+
+        Self { body, possible_center}
+    }
+
+    fn fill(&mut self, grid: &Vec<Vec<Tile>>) {
+        let base = [&grid[0][0], &grid[1][0], &grid[2][0], &grid[3][0], &grid[4][0], &grid[5][0], &grid[6][0], &grid[7][0], &grid[8][0]];
+
+        for i in base {
+            for j in base {
+                self.add(i, j);
+            }
+        }
+
+        self.generate_possible_centers();
+    }
+}
+
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Tile {
@@ -187,6 +266,7 @@ impl FromStr for Tile {
     fn from_str(_s: &str) -> Result<Self, Self::Err> {
         let res = _s
             .lines()
+            .map(|line| line.trim())
             .enumerate()
             .fold(
                 Tile::new(),
@@ -255,6 +335,10 @@ impl Tile {
             stage: TileStage::Base,
             rotation_state: RotationState::R0,
         }
+    }
+
+    fn boarder_values(&self) -> Vec<u16> {
+        vec![self.top, self.bottom, self.left, self.right]
     }
 
     fn rotate(&mut self) {
