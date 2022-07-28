@@ -9,6 +9,7 @@ dependencies = [
  "anyhow",
  "aoc_utils",
  "criterion",
+ "either",
  "fnv",
  "itertools",
  "lazy-regex",

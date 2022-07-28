@@ -1,11 +1,11 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 
+use fnv::FnvHashMap as HashMap;
 use itertools::{Itertools, Permutations};
 use std::fmt;
 use std::str::FromStr;
 use text_io::scan;
-use fnv::FnvHashMap as HashMap;
 
 pub struct Day20;
 
@@ -30,23 +30,22 @@ impl DaySolver for Day20 {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum TileStage {
+pub enum TileStage {
     Base,
     VerticallyFlipped,
     HorizontallyFlipped,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum RotationState {
+pub enum RotationState {
     R0,
     R90,
     R180,
     R270,
 }
 
-fn get_next_stage(current_stage: &TileStage) -> Option<TileStage> {
+pub fn get_next_stage(current_stage: &TileStage) -> Option<TileStage> {
     use TileStage::*;
 
     match current_stage {
@@ -56,7 +55,7 @@ fn get_next_stage(current_stage: &TileStage) -> Option<TileStage> {
     }
 }
 
-fn get_next_rotation(current_rotation: &RotationState) -> Option<RotationState> {
+pub fn get_next_rotation(current_rotation: &RotationState) -> Option<RotationState> {
     use RotationState::*;
 
     match current_rotation {
@@ -92,7 +91,10 @@ impl Grid {
     }
 
     fn solve(&self, possible_neighborhoods: &PossibleNeighborhoods) -> Option<u128> {
-        for grid in self.placement_permutations().filter(|permutation| possible_neighborhoods.can_be_sollution(permutation)) {
+        for grid in self
+            .placement_permutations()
+            .filter(|permutation| possible_neighborhoods.can_be_sollution(permutation))
+        {
             match recur_solver(
                 &grid,
                 &mut (0..9).into_iter().map(|_| Tile::new()).collect(),
@@ -124,7 +126,7 @@ fn recur_solver(
                 return Some(board[0].id * board[2].id * board[6].id * board[8].id);
             }
 
-            match recur_solver(domanins, board, current_index+1) {
+            match recur_solver(domanins, board, current_index + 1) {
                 None => {
                     continue;
                 },
@@ -155,7 +157,7 @@ fn can_insert(board: &[Tile], index: usize, tile: &Tile) -> bool {
 
 struct PossibleNeighborhoods {
     body: HashMap<u128, Vec<u128>>, // tile.id | vec[tile.id, tile.id]
-    possible_center: Vec<u128> 
+    possible_center: Vec<u128>,
 }
 
 impl PossibleNeighborhoods {
@@ -165,17 +167,22 @@ impl PossibleNeighborhoods {
 
         if checked_id != new_neighbour_id {
             for i in checked.get_permutations() {
-                if i.boarder_values().into_iter().any(|value_i| new_neighbour.boarder_values().into_iter().any(|value_j| value_i == value_j)) {
+                if i.boarder_values().into_iter().any(|value_i| {
+                    new_neighbour
+                        .boarder_values()
+                        .into_iter()
+                        .any(|value_j| value_i == value_j)
+                }) {
                     match self.body.get_mut(&checked_id) {
                         None => {
                             self.body.insert(checked_id, vec![new_neighbour_id]);
                         },
                         Some(v) => {
                             v.push(new_neighbour_id);
-                        }
+                        },
                     };
 
-                    return ;
+                    return;
                 }
             }
         }
@@ -189,7 +196,7 @@ impl PossibleNeighborhoods {
         }
     }
 
-    fn can_be_sollution(&self, grid: &Vec<&Vec<Tile>>) -> bool{
+    fn can_be_sollution(&self, grid: &[&Vec<Tile>]) -> bool {
         let center_id = &grid[4][0].id;
 
         if !self.possible_center.contains(center_id) {
@@ -197,8 +204,16 @@ impl PossibleNeighborhoods {
         }
 
         let center_neighbors = self.body.get(center_id).unwrap();
-        
-        if [&grid[1][0].id, &grid[3][0].id, &grid[5][0].id, &grid[7][0].id].into_iter().any(|tile_id| !center_neighbors.contains(tile_id)) {
+
+        if [
+            &grid[1][0].id,
+            &grid[3][0].id,
+            &grid[5][0].id,
+            &grid[7][0].id,
+        ]
+        .into_iter()
+        .any(|tile_id| !center_neighbors.contains(tile_id))
+        {
             return false;
         }
 
@@ -209,11 +224,24 @@ impl PossibleNeighborhoods {
         let body: HashMap<u128, Vec<u128>> = HashMap::default();
         let possible_center = Vec::new();
 
-        Self { body, possible_center}
+        Self {
+            body,
+            possible_center,
+        }
     }
 
-    fn fill(&mut self, grid: &Vec<Vec<Tile>>) {
-        let base = [&grid[0][0], &grid[1][0], &grid[2][0], &grid[3][0], &grid[4][0], &grid[5][0], &grid[6][0], &grid[7][0], &grid[8][0]];
+    fn fill(&mut self, grid: &[Vec<Tile>]) {
+        let base = [
+            &grid[0][0],
+            &grid[1][0],
+            &grid[2][0],
+            &grid[3][0],
+            &grid[4][0],
+            &grid[5][0],
+            &grid[6][0],
+            &grid[7][0],
+            &grid[8][0],
+        ];
 
         for i in base {
             for j in base {
@@ -224,7 +252,6 @@ impl PossibleNeighborhoods {
         self.generate_possible_centers();
     }
 }
-
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Tile {
@@ -264,49 +291,45 @@ impl FromStr for Tile {
     */
 
     fn from_str(_s: &str) -> Result<Self, Self::Err> {
-        let res = _s
-            .lines()
-            .map(|line| line.trim())
-            .enumerate()
-            .fold(
-                Tile::new(),
-                |mut tile, (line_number, line)| match line_number {
-                    0 => {
-                        scan!(line.bytes() => "Tile {}:", tile.id);
-                        tile
-                    },
-                    1 => {
-                        tile.top = number_from_line(line);
-
-                        let (left, right) = calculate_borders_change(line, line_number);
-                        tile.left += left;
-                        tile.right += right;
-
-                        tile
-                    },
-                    10 => {
-                        tile.bottom = number_from_line(line);
-
-                        let (left, right) = calculate_borders_change(line, line_number);
-                        tile.left += left;
-                        tile.right += right;
-
-                        tile
-                    },
-                    _ => {
-                        let (left, right) = calculate_borders_change(line, line_number);
-                        tile.left += left;
-                        tile.right += right;
-                        tile
-                    },
+        let res = _s.lines().map(|line| line.trim()).enumerate().fold(
+            Tile::new(),
+            |mut tile, (line_number, line)| match line_number {
+                0 => {
+                    scan!(line.bytes() => "Tile {}:", tile.id);
+                    tile
                 },
-            );
+                1 => {
+                    tile.top = number_from_line(line);
+
+                    let (left, right) = calculate_borders_change(line, line_number);
+                    tile.left += left;
+                    tile.right += right;
+
+                    tile
+                },
+                10 => {
+                    tile.bottom = number_from_line(line);
+
+                    let (left, right) = calculate_borders_change(line, line_number);
+                    tile.left += left;
+                    tile.right += right;
+
+                    tile
+                },
+                _ => {
+                    let (left, right) = calculate_borders_change(line, line_number);
+                    tile.left += left;
+                    tile.right += right;
+                    tile
+                },
+            },
+        );
 
         Ok(res)
     }
 }
 
-fn calculate_borders_change(line: &str, line_number: usize) -> (u16, u16) {
+pub fn calculate_borders_change(line: &str, line_number: usize) -> (u16, u16) {
     let mut letters = line.chars();
     let (first, last) = (letters.next().unwrap(), letters.last().unwrap());
 
@@ -411,7 +434,7 @@ impl Tile {
     }
 }
 
-fn number_from_line(line: &str) -> u16 {
+pub fn number_from_line(line: &str) -> u16 {
     line.chars().enumerate().fold(0, |number, (index, letter)| {
         if letter == '#' {
             number + 2_u16.pow((9 - index).try_into().unwrap())
@@ -421,7 +444,7 @@ fn number_from_line(line: &str) -> u16 {
     })
 }
 
-fn roatate_binary(number: u16) -> u16 {
+pub fn roatate_binary(number: u16) -> u16 {
     number.reverse_bits() >> 6 // u10 not u16
 }
 
