@@ -40,11 +40,11 @@ impl FromStr for Food {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (ingridients_unextracted, allergens_unextracted) = s.split_once(" (contains ").unwrap();
         let ingridients: Vec<String> = ingridients_unextracted
-            .split(" ")
+            .split(' ')
             .map(|s| s.to_owned())
             .collect();
         let allergens: Vec<String> = allergens_unextracted
-            .trim_end_matches(")")
+            .trim_end_matches(')')
             .split(", ")
             .map(|s| s.to_owned())
             .collect();
@@ -56,20 +56,20 @@ impl FromStr for Food {
     }
 }
 
-fn count_ingridients_without_allergens(foods: &Foods, allergens_sources: &Vec<String>) -> usize {
+fn count_ingridients_without_allergens(foods: &Foods, allergens_sources: &[String]) -> usize {
     foods
-        .into_iter()
+        .iter()
         .map(|food| {
             (&food.ingridients)
-                .into_iter()
+                .iter()
                 .filter(|ingridient| !allergens_sources.contains(ingridient))
                 .count()
         })
         .sum()
 }
 
-fn get_vec_intersection(vec1: &Vec<String>, vec2: &Vec<String>) -> Vec<String> {
-    vec1.into_iter()
+fn get_vec_intersection(vec1: &[String], vec2: &[String]) -> Vec<String> {
+    vec1.iter()
         .filter(|vec1_element| vec2.contains(vec1_element))
         .map(|value| value.to_owned())
         .collect()
