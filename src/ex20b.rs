@@ -23,15 +23,13 @@ impl DaySolver for Day20b {
         DayInfo::with_day_and_file_and_variant("day_20b", "data_files/ex20.txt", "faster");
 
     fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
-        let body: Vec<Tile> = _s
+        let tiles: Vec<Tile> = _s
             .split("\n\n")
             .map(|tile| tile.parse::<Tile>().unwrap())
             .collect();
 
-        let mut domain_generator = DomainGenerator::new();
-        domain_generator.fill(&body);
-
-        let grid = Grid { body: Vec::new() };
+        let domain_generator = DomainGenerator::from_tiles(&tiles);
+        let grid = Grid::new();
 
         match bt_iter_search(grid, &domain_generator.domains) {
             Either::Left(body) => {
@@ -70,28 +68,17 @@ impl FromStr for Tile {
                     scan!(line.bytes() => "Tile {}:", tile.id);
                     tile
                 },
-                1 => {
-                    tile.top = number_from_line(line);
-
-                    let (left, right) = calculate_borders_change(line, line_number);
-                    tile.left += left;
-                    tile.right += right;
-
-                    tile
-                },
-                10 => {
-                    tile.bottom = number_from_line(line);
-
-                    let (left, right) = calculate_borders_change(line, line_number);
-                    tile.left += left;
-                    tile.right += right;
-
-                    tile
-                },
                 _ => {
+                    if line_number == 1 {
+                        tile.top = number_from_line(line);
+                    } else if line_number == 10 {
+                        tile.bottom = number_from_line(line);
+                    }
+
                     let (left, right) = calculate_borders_change(line, line_number);
                     tile.left += left;
                     tile.right += right;
+
                     tile
                 },
             },
@@ -201,76 +188,73 @@ impl Iterator for TileIterator {
 }
 
 struct DomainGenerator {
-    connections: HashMap<Tile, Vec<Tile>>,
     domains: Vec<Vec<Tile>>,
 }
 
 impl DomainGenerator {
-    fn add(&mut self, checked: &Tile, new_neighbour: &Tile) {
-        let checked_id = checked.id;
-        let new_neighbour_id = new_neighbour.id;
+    fn from_tiles(tiles: &Vec<Tile>) -> Self {
+        let connections = Self::build_connections(tiles);
+        let domains = Self::generate_domains(connections);
 
-        if checked_id != new_neighbour_id {
-            for i in TileIterator::new(*checked) {
-                if i.boarder_values().into_iter().any(|value_i| {
-                    new_neighbour
-                        .boarder_values()
-                        .into_iter()
-                        .any(|value_j| value_i == value_j)
-                }) {
-                    match self.connections.get_mut(checked) {
-                        None => {
-                            self.connections.insert(*checked, vec![*new_neighbour]);
-                        },
-                        Some(v) => {
-                            v.push(*new_neighbour);
-                        },
-                    };
+        Self { domains }
+    }
 
-                    return;
+    fn build_connections(tiles: &Vec<Tile>) -> HashMap<Tile, Vec<Tile>> {
+        let mut connections: HashMap<Tile, Vec<Tile>> = HashMap::default();
+
+        for checked in tiles {
+            for new_neighbour in tiles {
+                if checked.id != new_neighbour.id {
+                    for i in TileIterator::new(*checked) {
+                        if i.boarder_values().into_iter().any(|value_i| {
+                            new_neighbour
+                                .boarder_values()
+                                .into_iter()
+                                .any(|value_j| value_i == value_j)
+                        }) {
+                            connections
+                                .entry(*checked)
+                                .or_insert_with(Vec::new)
+                                .push(*new_neighbour);
+
+                            break;
+                        }
+                    }
                 }
             }
         }
+
+        connections
     }
 
-    fn generate_domains(&mut self) {
-        for key in self.connections.keys() {
-            let conections = self.connections.get(key).unwrap().len();
-            if conections == 4 {
-                for index in 0..9 {
-                    self.domains[index].push(*key);
-                }
-            } else if conections == 3 {
-                for index in (0..9).filter(|index| *index != 4) {
-                    self.domains[index].push(*key);
-                }
-            } else if conections == 2 {
-                self.domains[0].push(*key);
-                self.domains[2].push(*key);
-                self.domains[6].push(*key);
-                self.domains[8].push(*key);
-            }
-        }
-    }
+    fn generate_domains(connections: HashMap<Tile, Vec<Tile>>) -> Vec<Vec<Tile>> {
+        let mut domains = vec![Vec::new(); 9];
 
-    fn new() -> Self {
-        let connections: HashMap<Tile, Vec<Tile>> = HashMap::default();
-        let domains = vec![Vec::new(); 9];
-
-        Self {
-            connections,
-            domains,
-        }
-    }
-
-    fn fill(&mut self, grid: &Vec<Tile>) {
-        for i in grid {
-            for j in grid {
-                self.add(i, j);
+        for (tile, tile_neighbours) in connections.into_iter() {
+            match tile_neighbours.len() {
+                4 => {
+                    for index in 0..9 {
+                        domains[index].push(tile);
+                    }
+                },
+                3 => {
+                    for index in (0..9).filter(|index| *index != 4) {
+                        domains[index].push(tile);
+                    }
+                },
+                2 => {
+                    domains[0].push(tile);
+                    domains[2].push(tile);
+                    domains[6].push(tile);
+                    domains[8].push(tile);
+                },
+                _ => {
+                    unreachable!();
+                },
             }
         }
 
-        self.generate_domains();
+        domains
     }
 }
 
@@ -286,6 +270,10 @@ struct Grid {
 */
 
 impl Grid {
+    fn new() -> Self {
+        Self { body: Vec::new() }
+    }
+
     fn tile_placed(&self, tile_id: u128) -> bool {
         self.body.iter().any(|tile| tile.id == tile_id)
     }
@@ -296,11 +284,7 @@ impl BTState for Grid {
     type Domain = Vec<Vec<Tile>>;
 
     fn is_goal(&mut self) -> bool {
-        if self.body.len() != 9 {
-            return false;
-        }
-
-        true
+        self.body.len() == 9
     }
 
     fn start_searching_with_choices(&self, domain: &Self::Domain) -> Option<Vec<Self::Choice>> {
@@ -311,6 +295,8 @@ impl BTState for Grid {
                 res.push(j);
             }
         }
+
+        // println!("len={}", res.len());
 
         Some(res)
     }
@@ -325,129 +311,64 @@ impl BTState for Grid {
 
         grid real indexes:              4 - 1 - 3 - 5 - 7 - 0 - 2 - 6 - 8
 
-        equiwalents stored in program:  0 - 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8
+        equivalents stored in program:  0 - 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8
         */
 
+        let build_res = |n: usize, callback: &dyn Fn(&Tile) -> bool| {
+            let mut res: Vec<Tile> = Vec::new();
+
+            for i in domain[unhash(n)].iter() {
+                for j in TileIterator::new(*i)
+                    .into_iter()
+                    .filter(|&new_tile| callback(&new_tile))
+                {
+                    res.push(j);
+                }
+            }
+
+            res
+        };
+
         match self.body.len() {
-            1 => {
-                let mut res: Vec<Tile> = Vec::new();
+            1 => build_res(1, &|new_tile: &Tile| {
+                new_tile.bottom == self.body[0].top && !self.tile_placed(new_tile.id)
+            }),
 
-                for i in domain[unhash(1)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.bottom == self.body[0].top && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
+            2 => build_res(2, &|new_tile: &Tile| {
+                new_tile.right == self.body[0].left && !self.tile_placed(new_tile.id)
+            }),
 
-                res
-            },
+            3 => build_res(3, &|new_tile: &Tile| {
+                new_tile.left == self.body[0].right && !self.tile_placed(new_tile.id)
+            }),
 
-            2 => {
-                let mut res: Vec<Tile> = Vec::new();
+            4 => build_res(4, &|new_tile: &Tile| {
+                new_tile.top == self.body[0].bottom && !self.tile_placed(new_tile.id)
+            }),
 
-                for i in domain[unhash(2)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.right == self.body[0].left && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
+            5 => build_res(5, &|new_tile: &Tile| {
+                new_tile.bottom == self.body[2].top
+                    && new_tile.right == self.body[1].left
+                    && !self.tile_placed(new_tile.id)
+            }),
 
-                res
-            },
+            6 => build_res(6, &|new_tile: &Tile| {
+                new_tile.bottom == self.body[3].top
+                    && new_tile.left == self.body[1].right
+                    && !self.tile_placed(new_tile.id)
+            }),
 
-            3 => {
-                let mut res: Vec<Tile> = Vec::new();
+            7 => build_res(7, &|new_tile: &Tile| {
+                new_tile.top == self.body[2].bottom
+                    && new_tile.right == self.body[4].left
+                    && !self.tile_placed(new_tile.id)
+            }),
 
-                for i in domain[unhash(3)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.left == self.body[0].right && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
-
-            4 => {
-                let mut res: Vec<Tile> = Vec::new();
-
-                for i in domain[unhash(4)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.top == self.body[0].bottom && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
-
-            5 => {
-                let mut res: Vec<Tile> = Vec::new();
-
-                for i in domain[unhash(5)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.bottom == self.body[2].top
-                            && new_tile.right == self.body[1].left
-                            && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
-
-            6 => {
-                let mut res: Vec<Tile> = Vec::new();
-
-                for i in domain[unhash(6)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.bottom == self.body[3].top
-                            && new_tile.left == self.body[1].right
-                            && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
-
-            7 => {
-                let mut res: Vec<Tile> = Vec::new();
-
-                for i in domain[unhash(7)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.top == self.body[2].bottom
-                            && new_tile.right == self.body[4].left
-                            && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
-
-            8 => {
-                let mut res: Vec<Tile> = Vec::new();
-
-                for i in domain[unhash(8)].iter() {
-                    for j in TileIterator::new(*i).into_iter().filter(|&new_tile| {
-                        new_tile.top == self.body[3].bottom
-                            && new_tile.left == self.body[4].right
-                            && !self.tile_placed(new_tile.id)
-                    }) {
-                        res.push(j);
-                    }
-                }
-
-                res
-            },
+            8 => build_res(8, &|new_tile: &Tile| {
+                new_tile.top == self.body[3].bottom
+                    && new_tile.left == self.body[4].right
+                    && !self.tile_placed(new_tile.id)
+            }),
 
             9 => Vec::new(),
 
