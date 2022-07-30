@@ -1,9 +1,13 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
+use std::collections::VecDeque;
+use std::str::FromStr;
 
 pub struct Day22;
 
 const INPUT_SECTION_DELIMETER: &str = "\n\n";
+
+type Card = u8;
 
 impl DaySolver for Day22 {
     type Output = u16;
@@ -14,35 +18,31 @@ impl DaySolver for Day22 {
     fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
         let (p1_input, p2_input) = _s.split_once(INPUT_SECTION_DELIMETER).unwrap();
 
-        let mut player1_deck = deck_from_str(p1_input);
-        let mut player2_deck = deck_from_str(p2_input);
+        let mut player1 = p1_input.parse::<Player>().unwrap();
+        let mut player2 = p2_input.parse::<Player>().unwrap();
 
-        let mut p1_card: u16;
-        let mut p2_card: u16;
+        let mut p1_card: Card;
+        let mut p2_card: Card;
 
         let res: u16 = loop {
             // get value of first elements
-            p1_card = *player1_deck.first().unwrap();
-            p2_card = *player2_deck.first().unwrap();
-
-            // remove first elements
-            player1_deck.remove(0);
-            player2_deck.remove(0);
+            p1_card = player1.get_card().unwrap();
+            p2_card = player2.get_card().unwrap();
 
             // game logic
             if p1_card > p2_card {
-                player1_deck.push(p1_card);
-                player1_deck.push(p2_card);
+                player1.put_card(p1_card);
+                player1.put_card(p2_card);
             } else {
-                player2_deck.push(p2_card);
-                player2_deck.push(p1_card);
+                player2.put_card(p2_card);
+                player2.put_card(p1_card);
             }
 
             // check if game ended
-            if player1_deck.is_empty() {
-                break count_result(&player2_deck);
-            } else if player2_deck.is_empty() {
-                break count_result(&player1_deck);
+            if !player1.has_cards() {
+                break player2.count_result();
+            } else if !player2.has_cards() {
+                break player1.count_result();
             }
         };
 
@@ -50,20 +50,46 @@ impl DaySolver for Day22 {
     }
 }
 
-fn deck_from_str(player_input: &str) -> Vec<u16> {
-    player_input
-        .lines()
-        .skip(1)
-        .map(|card| card.parse::<u16>().unwrap())
-        .collect()
+#[derive(Debug)]
+struct Player {
+    cards: VecDeque<Card>,
 }
 
-fn count_result(deck: &Vec<u16>) -> u16 {
-    println!("{:?}", deck);
-    let deck_size = deck.len();
-    deck.iter().enumerate().fold(0, |result, (index, value)| {
-        result + ((deck_size - index) as u16) * value
-    })
+impl Player {
+    fn get_card(&mut self) -> Option<Card> {
+        self.cards.pop_front()
+    }
+
+    fn put_card(&mut self, card: Card) {
+        self.cards.push_back(card);
+    }
+
+    fn has_cards(&self) -> bool {
+        !self.cards.is_empty()
+    }
+
+    fn count_result(&self) -> u16 {
+        let deck_size = self.cards.len();
+        self.cards
+            .iter()
+            .enumerate()
+            .map(|(index, value)| (((deck_size - index) as u8) * (*value)) as u16)
+            .sum()
+    }
+}
+
+impl FromStr for Player {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let cards: VecDeque<Card> = s
+            .lines()
+            .skip(1)
+            .map(|card| card.parse::<u8>().unwrap())
+            .collect();
+
+        Ok(Player { cards })
+    }
 }
 
 #[cfg(test)]
@@ -72,20 +98,21 @@ mod tests {
 
     #[test]
     fn ex22_count_result() {
-        let input: Vec<u16> = vec![3, 2, 10, 6, 8, 5, 9, 4, 7, 1];
-        assert_eq!(count_result(&input), 306)
+        let cards: VecDeque<Card> = VecDeque::from([3, 2, 10, 6, 8, 5, 9, 4, 7, 1]);
+        let player = Player { cards };
+        assert_eq!(player.count_result(), 306)
     }
 
     #[test]
     fn ex22_deck_from_str() {
-        let result: Vec<u16> = vec![9, 2, 6, 3, 1];
+        let result: VecDeque<Card> = VecDeque::from([9, 2, 6, 3, 1]);
         let input = r#"Player 1:
 9
 2
 6
 3
 1"#;
-        assert_eq!(deck_from_str(input), result)
+        assert_eq!(input.parse::<Player>().unwrap().cards, result)
     }
 
     #[test]
