@@ -1,12 +1,14 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 use fnv::FnvHashMap as HashMap;
+use fnv::FnvHashSet as HashSet;
 use std::str::FromStr;
 
 pub struct Day21;
 
-type Foods = Vec<Food>;
 type AllergensSources = Vec<String>;
+type Allergens = HashSet<String>;
+type Ingridients = HashSet<String>;
 
 impl DaySolver for Day21 {
     type Output = usize;
@@ -15,14 +17,11 @@ impl DaySolver for Day21 {
         DayInfo::with_day_and_file_and_variant("day_21", "data_files/ex21.txt", "base");
 
     fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
-        let foods: Foods = _s
-            .lines()
-            .map(|line| line.parse::<Food>().unwrap())
-            .collect();
+        let foods = _s.parse::<Foods>().unwrap();
 
-        let allergens_sources = get_possible_allergens_sources(&foods);
+        let allergens_sources = foods.get_possible_allergens_sources();
 
-        let res = count_ingridients_without_allergens(&foods, &allergens_sources);
+        let res = foods.count_ingridients_without_allergens(&allergens_sources);
 
         Ok(res)
     }
@@ -30,8 +29,8 @@ impl DaySolver for Day21 {
 
 #[derive(Debug, PartialEq)]
 struct Food {
-    allergens: Vec<String>,
-    ingridients: Vec<String>,
+    allergens: Allergens,
+    ingridients: Ingridients,
 }
 
 impl FromStr for Food {
@@ -39,11 +38,11 @@ impl FromStr for Food {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (ingridients_unextracted, allergens_unextracted) = s.split_once(" (contains ").unwrap();
-        let ingridients: Vec<String> = ingridients_unextracted
+        let ingridients: Ingridients = ingridients_unextracted
             .split(' ')
             .map(|s| s.to_owned())
             .collect();
-        let allergens: Vec<String> = allergens_unextracted
+        let allergens: Allergens = allergens_unextracted
             .trim_end_matches(')')
             .split(", ")
             .map(|s| s.to_owned())
@@ -56,50 +55,63 @@ impl FromStr for Food {
     }
 }
 
-fn count_ingridients_without_allergens(foods: &Foods, allergens_sources: &[String]) -> usize {
-    foods
-        .iter()
-        .map(|food| {
-            (&food.ingridients)
-                .iter()
-                .filter(|ingridient| !allergens_sources.contains(ingridient))
-                .count()
-        })
-        .sum()
+struct Foods {
+    foods: Vec<Food>,
 }
 
-fn get_vec_intersection(vec1: &[String], vec2: &[String]) -> Vec<String> {
-    vec1.iter()
-        .filter(|vec1_element| vec2.contains(vec1_element))
-        .map(|value| value.to_owned())
-        .collect()
+impl FromStr for Foods {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let foods: Vec<Food> = s
+            .lines()
+            .map(|line| line.parse::<Food>().unwrap())
+            .collect();
+
+        Ok(Foods { foods })
+    }
 }
 
-fn get_possible_allergens_sources(foods: &Foods) -> AllergensSources {
-    let mut allergens_sources: HashMap<String, Vec<String>> = HashMap::default();
+impl Foods {
+    fn count_ingridients_without_allergens(&self, allergens_sources: &[String]) -> usize {
+        self.foods
+            .iter()
+            .map(|food| {
+                (&food.ingridients)
+                    .iter()
+                    .filter(|ingridient| !allergens_sources.contains(ingridient))
+                    .count()
+            })
+            .sum()
+    }
 
-    for food in foods {
-        for allergen in &food.allergens {
-            if let Some((key, value)) = allergens_sources.get_key_value(allergen) {
-                let _unused = allergens_sources.insert(
-                    key.to_owned(),
-                    get_vec_intersection(value, &food.ingridients),
-                );
-            } else {
-                allergens_sources.insert(allergen.to_owned(), food.ingridients.to_owned());
+    fn get_possible_allergens_sources(&self) -> AllergensSources {
+        let mut allergens_sources: HashMap<String, Ingridients> = HashMap::default();
+
+        for food in &self.foods {
+            for allergen in &food.allergens {
+                if let Some((key, value)) = allergens_sources.get_key_value(allergen) {
+                    let intersection: Ingridients = value
+                        .intersection(&food.ingridients)
+                        .map(|element| element.to_owned())
+                        .collect();
+                    let _unused = allergens_sources.insert(key.to_owned(), intersection);
+                } else {
+                    allergens_sources.insert(allergen.to_owned(), food.ingridients.to_owned());
+                }
             }
         }
-    }
 
-    let mut res = Vec::new();
+        let mut res = Vec::new();
 
-    for ingridient in allergens_sources.values().flatten() {
-        if !res.contains(ingridient) {
-            res.push(ingridient.to_owned());
+        for ingridient in allergens_sources.values().flatten() {
+            if !res.contains(ingridient) {
+                res.push(ingridient.to_owned());
+            }
         }
-    }
 
-    res
+        res
+    }
 }
 
 #[cfg(test)]
@@ -107,12 +119,16 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
+    fn hashset(data: &[String]) -> HashSet<String> {
+        HashSet::from_iter(data.iter().cloned())
+    }
+
     #[test_case("mxmxvkd kfcds sqjhc nhms (contains dairy, fish)" => 
-        Food {  allergens: vec!["dairy".to_owned(), "fish".to_owned()], 
-                ingridients: vec!["mxmxvkd".to_owned(), "kfcds".to_owned(), "sqjhc".to_owned(), "nhms".to_owned()] })]
+        Food {  allergens: hashset(&["dairy".to_owned(), "fish".to_owned()]), 
+                ingridients: hashset(&["mxmxvkd".to_owned(), "kfcds".to_owned(), "sqjhc".to_owned(), "nhms".to_owned()]) })]
     #[test_case("sqjhc fvjkl (contains soy)" => 
-        Food {  allergens: vec!["soy".to_owned()], 
-                ingridients: vec!["sqjhc".to_owned(), "fvjkl".to_owned()] })]
+        Food {  allergens: hashset(&["soy".to_owned()]), 
+                ingridients: hashset(&["sqjhc".to_owned(), "fvjkl".to_owned()]) })]
     fn ex21_food_from_str(s: &str) -> Food {
         s.parse::<Food>().unwrap()
     }
@@ -124,64 +140,56 @@ trh fvjkl sbzzf mxmxvkd (contains dairy)
 sqjhc fvjkl (contains soy)
 sqjhc mxmxvkd sbzzf (contains fish)"#;
 
-        let foods: Vec<Food> = t
-            .lines()
-            .map(|line| line.parse::<Food>().unwrap())
-            .collect();
+        let foods = t.parse::<Foods>().unwrap();
         assert_eq!(
-            get_possible_allergens_sources(&foods),
+            foods.get_possible_allergens_sources(),
             vec!["mxmxvkd", "sqjhc", "fvjkl"]
         )
-    }
-
-    #[test_case(vec!["1".to_string(), "2".to_string(), "3".to_string(), "4".to_string()], vec!["2".to_string(), "4".to_string(), "6".to_string()] => vec!["2".to_string(), "4".to_string()])]
-    fn ex21_get_vec_intersection(vec1: Vec<String>, vec2: Vec<String>) -> Vec<String> {
-        get_vec_intersection(&vec1, &vec2)
     }
 
     #[test]
     fn ex21_count_ingridients_without_allergens() {
         let foods = vec![
             Food {
-                allergens: vec!["dairy".to_string(), "fish".to_string()],
-                ingridients: vec![
+                allergens: hashset(&["dairy".to_string(), "fish".to_string()]),
+                ingridients: hashset(&[
                     "mxmxvkd".to_string(),
                     "kfcds".to_string(),
                     "sqjhc".to_string(),
                     "nhms".to_string(),
-                ],
+                ]),
             },
             Food {
-                allergens: vec!["dairy".to_string()],
-                ingridients: vec![
+                allergens: hashset(&["dairy".to_string()]),
+                ingridients: hashset(&[
                     "trh".to_string(),
                     "fvjkl".to_string(),
                     "sbzzf".to_string(),
                     "mxmxvkd".to_string(),
-                ],
+                ]),
             },
             Food {
-                allergens: vec!["soy".to_string()],
-                ingridients: vec!["sqjhc".to_string(), "fvjkl".to_string()],
+                allergens: hashset(&["soy".to_string()]),
+                ingridients: hashset(&["sqjhc".to_string(), "fvjkl".to_string()]),
             },
             Food {
-                allergens: vec!["fish".to_string()],
-                ingridients: vec![
+                allergens: hashset(&["fish".to_string()]),
+                ingridients: hashset(&[
                     "sqjhc".to_string(),
                     "mxmxvkd".to_string(),
                     "sbzzf".to_string(),
-                ],
+                ]),
             },
         ];
+
+        let allergens_sources = &vec![
+            "mxmxvkd".to_string(),
+            "sqjhc".to_string(),
+            "fvjkl".to_string(),
+        ];
+
         assert_eq!(
-            count_ingridients_without_allergens(
-                &foods,
-                &vec![
-                    "mxmxvkd".to_string(),
-                    "sqjhc".to_string(),
-                    "fvjkl".to_string()
-                ]
-            ),
+            Foods { foods }.count_ingridients_without_allergens(allergens_sources),
             5
         )
     }
