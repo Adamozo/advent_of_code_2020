@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 pub struct Day21;
 
-type AllergensSources = Vec<String>;
+type AllergensSources = HashSet<String>;
 type Allergens = HashSet<String>;
 type Ingridients = HashSet<String>;
 
@@ -73,13 +73,13 @@ impl FromStr for Foods {
 }
 
 impl Foods {
-    fn count_ingridients_without_allergens(&self, allergens_sources: &[String]) -> usize {
+    fn count_ingridients_without_allergens(&self, allergens_sources: &AllergensSources) -> usize {
         self.foods
             .iter()
             .map(|food| {
-                (&food.ingridients)
+                food.ingridients
                     .iter()
-                    .filter(|ingridient| !allergens_sources.contains(ingridient))
+                    .filter(|ingridient| !allergens_sources.contains(*ingridient))
                     .count()
             })
             .sum()
@@ -90,24 +90,22 @@ impl Foods {
 
         for food in &self.foods {
             for allergen in &food.allergens {
-                if let Some((key, value)) = allergens_sources.get_key_value(allergen) {
-                    let intersection: Ingridients = value
-                        .intersection(&food.ingridients)
-                        .map(|element| element.to_owned())
-                        .collect();
-                    let _unused = allergens_sources.insert(key.to_owned(), intersection);
-                } else {
-                    allergens_sources.insert(allergen.to_owned(), food.ingridients.to_owned());
-                }
+                allergens_sources
+                    .entry(allergen.to_owned())
+                    .and_modify(|ingridients| {
+                        *ingridients = ingridients
+                            .intersection(&food.ingridients)
+                            .map(|element| element.to_owned())
+                            .collect();
+                    })
+                    .or_insert_with(|| food.ingridients.clone());
             }
         }
 
-        let mut res = Vec::new();
+        let mut res = HashSet::default();
 
         for ingridient in allergens_sources.values().flatten() {
-            if !res.contains(ingridient) {
-                res.push(ingridient.to_owned());
-            }
+            res.insert(ingridient.to_owned());
         }
 
         res
@@ -143,7 +141,7 @@ sqjhc mxmxvkd sbzzf (contains fish)"#;
         let foods = t.parse::<Foods>().unwrap();
         assert_eq!(
             foods.get_possible_allergens_sources(),
-            vec!["mxmxvkd", "sqjhc", "fvjkl"]
+            hashset(&["mxmxvkd".to_owned(), "sqjhc".to_owned(), "fvjkl".to_owned()])
         )
     }
 
@@ -182,11 +180,11 @@ sqjhc mxmxvkd sbzzf (contains fish)"#;
             },
         ];
 
-        let allergens_sources = &vec![
+        let allergens_sources = &hashset(&[
             "mxmxvkd".to_string(),
             "sqjhc".to_string(),
             "fvjkl".to_string(),
-        ];
+        ]);
 
         assert_eq!(
             Foods { foods }.count_ingridients_without_allergens(allergens_sources),
