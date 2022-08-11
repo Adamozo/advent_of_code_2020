@@ -13,6 +13,8 @@ anyhow = "^1.0.56"
 text_io = "^0.1.10"
 aoc_utils = { path = "./aoc_utils"}
 fnv = "^1.0"
+itertools = "^0.10.3"
+either = "^1.7.0"
 petgraph = "^0.6.2"
 
 [dev-dependencies]
@@ -20,6 +22,6 @@ test-case = "^2.0.0"
 criterion = "^0.3.5"
 
 [[bench]]
-name = "ex15benchmark"
-path = "benches/ex15_benchmark.rs"
+name = "ex20benchmark"
+path = "benches/ex20_benchmark.rs"
 harness = false
