@@ -39,6 +39,7 @@ name = "aoc_utils"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "either",
 ]
 
 [[package]]
