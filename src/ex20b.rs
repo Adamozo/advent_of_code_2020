@@ -232,17 +232,17 @@ impl DomainGenerator {
 
         for (tile, tile_neighbours) in connections.into_iter() {
             match tile_neighbours.len() {
-                4 => {
+                4 => { // tiles with only 2 neighbors can be everywhere
                     for index in 0..9 {
                         domains[index].push(tile);
                     }
                 },
-                3 => {
+                3 => { // tiles with 3 neighbors can't be only in center
                     for index in (0..9).filter(|index| *index != 4) {
                         domains[index].push(tile);
                     }
                 },
-                2 => {
+                2 => { // tiles with only 2 neighbors can be only in corners
                     domains[0].push(tile);
                     domains[2].push(tile);
                     domains[6].push(tile);
