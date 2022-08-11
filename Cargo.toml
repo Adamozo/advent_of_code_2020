@@ -15,6 +15,7 @@ aoc_utils = { path = "./aoc_utils"}
 fnv = "^1.0"
 itertools = "^0.10.3"
 either = "^1.7.0"
+petgraph = "^0.6.2"
 
 [dev-dependencies]
 test-case = "^2.0.0"
