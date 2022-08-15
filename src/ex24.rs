@@ -1,42 +1,18 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
+use fnv::FnvHashSet;
 
 pub struct Day24;
 
-#[derive(PartialEq, Debug)]
-enum TileSide {
-    White,
-    Black,
-}
-
-#[derive(Debug)]
-struct Tile {
+#[derive(Debug, Eq, PartialEq, Hash)]
+struct TilePosition {
     column: i32,
     row: i32,
-    color: TileSide,
 }
 
-impl PartialEq for Tile {
-    fn eq(&self, other: &Tile) -> bool {
-        self.column == other.column && self.row == other.row
-    }
-}
-
-impl Tile {
+impl TilePosition {
     fn new() -> Self {
-        Self {
-            column: 0,
-            row: 0,
-            color: TileSide::White,
-        }
-    }
-
-    fn rotate(&mut self) {
-        if self.color == TileSide::White {
-            self.color = TileSide::Black;
-        } else {
-            self.color = TileSide::White;
-        }
+        Self { column: 0, row: 0 }
     }
 
     fn shift(&mut self, direction: &[char]) {
@@ -74,33 +50,26 @@ impl DaySolver for Day24 {
     const INFO: DayInfo =
         DayInfo::with_day_and_file_and_variant("day_24", "data_files/ex24.txt", "base");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self>::Output> {
-        let (black_tiles_counter, _) = _s.lines().map(get_tile).fold(
-            (0, Vec::new()),
-            |(black_tile_counter, mut tiles): (u32, Vec<Tile>), mut tile| {
-                if let Some(index) = tiles.iter().position(|element| *element == tile) {
-                    tiles[index].rotate();
-
-                    if tiles[index].color == TileSide::White {
-                        return (black_tile_counter - 1, tiles);
-                    }
-                } else {
-                    tile.rotate();
-                    tiles.push(tile);
+    fn solution(s: &str) -> anyhow::Result<<Self>::Output> {
+        let black_tiles = s.lines().map(get_tile_position).fold(
+            FnvHashSet::default(),
+            |mut black_tiles: FnvHashSet<TilePosition>, tile_position| {
+                if !black_tiles.remove(&tile_position) {
+                    black_tiles.insert(tile_position);
                 }
 
-                (black_tile_counter + 1, tiles)
+                black_tiles
             },
         );
 
-        Ok(black_tiles_counter)
+        Ok(black_tiles.len() as u32)
     }
 }
 
-fn get_tile(line: &str) -> Tile {
-    let (_, tile) = line
-        .chars()
-        .fold((None, Tile::new()), |(acc_letter, mut tile), new_letter| {
+fn get_tile_position(line: &str) -> TilePosition {
+    let (_, tile) = line.chars().fold(
+        (None, TilePosition::new()),
+        |(acc_letter, mut tile), new_letter| {
             if new_letter == 'e' || new_letter == 'w' {
                 if let Some(old_letter) = acc_letter {
                     tile.shift(&[old_letter, new_letter]);
@@ -112,7 +81,8 @@ fn get_tile(line: &str) -> Tile {
             } else {
                 (Some(new_letter), tile)
             }
-        });
+        },
+    );
 
     tile
 }
@@ -122,46 +92,28 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case("sesenwnenenewseeswwswswwnenewsewsw" => Tile{column: -3, row: 2, color: TileSide::White})]
-    #[test_case("neeenesenwnwwswnenewnwwsewnenwseswesw" => Tile{column: 1, row: -3, color: TileSide::White})]
-    #[test_case("seswneswswsenwwnwse" => Tile{column: -3, row: 3, color: TileSide::White})]
-    fn ex24_get_tile(line: &str) -> Tile {
-        get_tile(line)
+    #[test_case("sesenwnenenewseeswwswswwnenewsewsw" => TilePosition{column: -3, row: 2})]
+    #[test_case("neeenesenwnwwswnenewnwwsewnenwseswesw" => TilePosition{column: 1, row: -3})]
+    #[test_case("seswneswswsenwwnwse" => TilePosition{column: -3, row: 3})]
+    fn ex24_get_tile_position(line: &str) -> TilePosition {
+        get_tile_position(line)
     }
 
-    #[test_case(&['s', 'e'] => Tile{column: 0, row: 1, color: TileSide::White})]
-    #[test_case(&['n', 'e'] => Tile{column: 1, row: -1, color: TileSide::White})]
-    #[test_case(&['e'] => Tile{column: 1, row: 0, color: TileSide::White})]
-    #[test_case(&['s', 'w'] => Tile{column: -1, row: 1, color: TileSide::White})]
-    #[test_case(&['n', 'w'] => Tile{column: 0, row: -1, color: TileSide::White})]
-    #[test_case(&['w'] => Tile{column: -1, row: 0, color: TileSide::White})]
-    fn ex24_tile_shift(direction: &[char]) -> Tile {
-        let mut tile = Tile::new();
+    #[test_case(&['s', 'e'] => TilePosition{column: 0, row: 1})]
+    #[test_case(&['n', 'e'] => TilePosition{column: 1, row: -1})]
+    #[test_case(&['e'] => TilePosition{column: 1, row: 0})]
+    #[test_case(&['s', 'w'] => TilePosition{column: -1, row: 1})]
+    #[test_case(&['n', 'w'] => TilePosition{column: 0, row: -1})]
+    #[test_case(&['w'] => TilePosition{column: -1, row: 0})]
+    fn ex24_tile_shift(direction: &[char]) -> TilePosition {
+        let mut tile = TilePosition::new();
         tile.shift(direction);
         tile
     }
 
     #[test]
-    fn ex24_tile_rotate() {
-        use TileSide::*;
-        let mut tile = Tile::new();
-        assert_eq!(tile.color, White);
-        tile.rotate();
-        assert_eq!(tile.color, Black);
-        tile.rotate();
-        assert_eq!(tile.color, White)
-    }
-
-    #[test]
     fn ex24_tile_new() {
-        assert_eq!(
-            Tile::new(),
-            Tile {
-                column: 0,
-                row: 0,
-                color: TileSide::White
-            }
-        )
+        assert_eq!(TilePosition::new(), TilePosition { column: 0, row: 0 })
     }
 
     #[test]
