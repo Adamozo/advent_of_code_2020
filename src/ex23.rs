@@ -33,7 +33,7 @@ impl GameEngine {
         let mut current_cup = self.cups[0];
         let mut destination_cup;
 
-        for _i in 0..=99 {
+        for _ in 0..=99 {
             self.pick_three_after_cup(&current_cup);
             destination_cup = self.get_destination(&current_cup);
             self.push_three_after_cup(&destination_cup);
@@ -45,13 +45,9 @@ impl GameEngine {
     }
 
     fn pick_three_after_cup(&mut self, selected_cup: &u8) {
-        self.picked_cups = Vec::new();
-
         for _i in 0..=2 {
-            self.picked_cups.push(
-                self.cups
-                    .remove(self.calculate_next_location(self.get_cup_location(selected_cup))),
-            );
+            self.picked_cups[_i] = self.cups
+                    .remove(self.calculate_next_location(self.get_cup_location(selected_cup)));
         }
     }
 
@@ -137,7 +133,7 @@ impl FromStr for GameEngine {
             .map(|cup| cup.to_digit(10).unwrap() as u8)
             .collect();
         let min_cup: Cup = *cups.iter().min().unwrap();
-        let picked_cups: Cups = Vec::new();
+        let picked_cups: Cups = vec![0,0,0];
 
         Ok(GameEngine {
             cups,
@@ -161,7 +157,7 @@ mod tests {
     fn ex23_game_engine_from_str() {
         let cups: Cups = vec![3, 8, 9, 1, 2, 5, 4, 6, 7];
         let min_cup: Cup = 1;
-        let picked_cups: Cups = Vec::new();
+        let picked_cups: Cups = vec![0;3];
         let res = GameEngine {
             cups,
             min_cup,

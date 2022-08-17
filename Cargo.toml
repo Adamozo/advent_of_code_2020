@@ -20,6 +20,6 @@ test-case = "^2.0.0"
 criterion = "^0.3.5"
 
 [[bench]]
-name = "ex15benchmark"
-path = "benches/ex15_benchmark.rs"
+name = "ex23benchmark"
+path = "benches/ex23_benchmark.rs"
 harness = false
