@@ -1,7 +1,7 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
-use std::str;
 use std::char::from_digit;
+use std::str;
 use std::str::FromStr;
 
 /*
@@ -28,7 +28,6 @@ pub struct Day23b;
 type Cup = u32;
 type Cups = Vec<Cup>;
 
-
 impl DaySolver for Day23b {
     type Output = String;
 
@@ -44,7 +43,7 @@ impl DaySolver for Day23b {
 
 #[derive(PartialEq, Debug)]
 struct GameEngine {
-    cups: Cups,
+    cups:        Cups,
     picked_cups: Cups,
     current_cup: Cup,
 }
@@ -65,7 +64,7 @@ impl GameEngine {
     }
 
     fn get_next_cup(&self, cup: &Cup) -> Cup {
-        self.cups[(cup-1) as usize]
+        self.cups[(cup - 1) as usize]
     }
 
     fn pick_three_after_current_cup(&mut self) {
@@ -74,12 +73,12 @@ impl GameEngine {
         self.picked_cups[2] = self.get_next_cup(&self.picked_cups[1]);
 
         // change next cup for selected_cup
-        self.cups[(self.current_cup-1) as usize] = self.get_next_cup(&self.picked_cups[2]);
+        self.cups[(self.current_cup - 1) as usize] = self.get_next_cup(&self.picked_cups[2]);
     }
 
     fn get_destination(&mut self) -> Cup {
         let mut destination = self.current_cup - 1;
-        
+
         let min_cup = self.min_cup();
         let max_cup = self.max_cup();
 
@@ -99,10 +98,10 @@ impl GameEngine {
     fn push_three_after_cup(&mut self, destination_cup: &Cup) {
         let first_cup = self.get_next_cup(destination_cup);
 
-        self.cups[(destination_cup-1) as usize] = self.picked_cups[0];
-        self.cups[(self.picked_cups[0]-1) as usize] = self.picked_cups[1];
-        self.cups[(self.picked_cups[1]-1) as usize] = self.picked_cups[2];
-        self.cups[(self.picked_cups[2]-1) as usize] = first_cup;
+        self.cups[(destination_cup - 1) as usize] = self.picked_cups[0];
+        self.cups[(self.picked_cups[0] - 1) as usize] = self.picked_cups[1];
+        self.cups[(self.picked_cups[1] - 1) as usize] = self.picked_cups[2];
+        self.cups[(self.picked_cups[2] - 1) as usize] = first_cup;
     }
 
     fn max_cup(&self) -> Cup {
@@ -118,7 +117,6 @@ impl GameEngine {
             if current > max {
                 max = current;
             }
-
         }
     }
 
@@ -135,7 +133,6 @@ impl GameEngine {
             if current < min {
                 min = current;
             }
-
         }
     }
 
@@ -162,26 +159,26 @@ impl FromStr for GameEngine {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut cups: Cups = vec![0;9];
+        let mut cups: Cups = vec![0; 9];
 
         let mut input = s.chars().map(|cup| cup.to_digit(10).unwrap() as Cup);
         let mut previous = input.next().unwrap();
         let first = previous;
 
         for cup in input {
-            cups[(previous-1) as usize] = cup;
+            cups[(previous - 1) as usize] = cup;
             previous = cup;
         }
 
-        cups[(previous-1) as usize] = first;
+        cups[(previous - 1) as usize] = first;
 
-        let picked_cups: Cups = vec![0,0,0];
+        let picked_cups: Cups = vec![0, 0, 0];
         let current_cup = first;
 
         Ok(GameEngine {
             cups,
             picked_cups,
-            current_cup
+            current_cup,
         })
     }
 }
@@ -198,12 +195,12 @@ mod tests {
     #[test]
     fn ex23_game_engine_from_str() {
         let cups: Cups = vec![2, 5, 8, 6, 4, 7, 3, 9, 1];
-        let picked_cups: Cups = vec![0;3];
+        let picked_cups: Cups = vec![0; 3];
         let current_cup: Cup = 3;
         let res = GameEngine {
             cups,
             picked_cups,
-            current_cup
+            current_cup,
         };
         assert_eq!("389125467".parse::<GameEngine>().unwrap(), res)
     }

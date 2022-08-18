@@ -1,12 +1,13 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
+use std::char::from_digit;
 use std::str;
 use std::str::FromStr;
 
 pub struct Day23;
 
-type Cups = Vec<u8>;
-type Cup = u8;
+type Cup = u32;
+type Cups = Vec<Cup>;
 
 impl DaySolver for Day23 {
     type Output = String;
@@ -23,8 +24,8 @@ impl DaySolver for Day23 {
 
 #[derive(PartialEq, Debug)]
 struct GameEngine {
-    cups: Cups,
-    min_cup: Cup,
+    cups:        Cups,
+    min_cup:     Cup,
     picked_cups: Cups,
 }
 
@@ -33,7 +34,7 @@ impl GameEngine {
         let mut current_cup = self.cups[0];
         let mut destination_cup;
 
-        for _ in 0..=99 {
+        for _ in 1..=100 {
             self.pick_three_after_cup(&current_cup);
             destination_cup = self.get_destination(&current_cup);
             self.push_three_after_cup(&destination_cup);
@@ -44,10 +45,11 @@ impl GameEngine {
         self.get_result()
     }
 
-    fn pick_three_after_cup(&mut self, selected_cup: &u8) {
+    fn pick_three_after_cup(&mut self, selected_cup: &Cup) {
         for _i in 0..=2 {
-            self.picked_cups[_i] = self.cups
-                    .remove(self.calculate_next_location(self.get_cup_location(selected_cup)));
+            self.picked_cups[_i] = self
+                .cups
+                .remove(self.calculate_next_location(self.get_cup_location(selected_cup)));
         }
     }
 
@@ -55,7 +57,7 @@ impl GameEngine {
         (checked_location + 1) % self.cups.len()
     }
 
-    fn get_cup_location(&self, checked_cup: &u8) -> usize {
+    fn get_cup_location(&self, checked_cup: &Cup) -> usize {
         self.cups
             .iter()
             .enumerate()
@@ -64,11 +66,12 @@ impl GameEngine {
             .unwrap()
     }
 
-    fn get_destination(&mut self, current_cup: &u8) -> u8 {
+    fn get_destination(&mut self, current_cup: &Cup) -> Cup {
         let mut destination = current_cup - 1;
+        let min_cup = self.min_cup();
 
         loop {
-            if destination < self.min_cup {
+            if destination < min_cup {
                 return self.max_cup();
             } else {
                 if !self.picked_cups.contains(&destination) {
@@ -88,11 +91,15 @@ impl GameEngine {
         }
     }
 
-    fn max_cup(&self) -> u8 {
+    fn max_cup(&self) -> Cup {
         *self.cups.iter().max().unwrap()
     }
 
-    fn get_cup_after_cup(&self, cup: Cup) -> u8 {
+    fn min_cup(&self) -> Cup {
+        *self.cups.iter().min().unwrap()
+    }
+
+    fn get_cup_after_cup(&self, cup: Cup) -> Cup {
         let position = (self
             .cups
             .iter()
@@ -103,24 +110,16 @@ impl GameEngine {
         self.cups[position]
     }
 
-    fn get_result(&self) -> String {
-        let mut res: Vec<String> = Vec::new();
+    fn get_result(&mut self) -> String {
+        let one = self.cups.iter().position(|value| *value == 1).unwrap();
+        let mut res = self.cups.split_off(one);
+        let _ = res.remove(0);
 
-        let start = self.get_cup_location(&1);
-        let mut pointer = start;
+        res.append(&mut self.cups);
 
-        loop {
-            res.push(self.cups[pointer].to_string());
-            pointer = self.calculate_next_location(pointer);
-
-            if pointer == start {
-                break;
-            }
-        }
-
-        let _unused = res.remove(0);
-
-        res.into_iter().collect::<String>()
+        res.iter()
+            .map(|num| from_digit(*num, 10).unwrap())
+            .collect::<String>()
     }
 }
 
@@ -130,10 +129,10 @@ impl FromStr for GameEngine {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let cups: Cups = s
             .chars()
-            .map(|cup| cup.to_digit(10).unwrap() as u8)
+            .map(|cup| cup.to_digit(10).unwrap() as Cup)
             .collect();
         let min_cup: Cup = *cups.iter().min().unwrap();
-        let picked_cups: Cups = vec![0,0,0];
+        let picked_cups: Cups = vec![0, 0, 0];
 
         Ok(GameEngine {
             cups,
@@ -157,7 +156,7 @@ mod tests {
     fn ex23_game_engine_from_str() {
         let cups: Cups = vec![3, 8, 9, 1, 2, 5, 4, 6, 7];
         let min_cup: Cup = 1;
-        let picked_cups: Cups = vec![0;3];
+        let picked_cups: Cups = vec![0; 3];
         let res = GameEngine {
             cups,
             min_cup,
@@ -168,14 +167,14 @@ mod tests {
 
     #[test]
     fn ex23_get_result() {
-        let game_engine = "389125467".parse::<GameEngine>().unwrap();
+        let mut game_engine = "389125467".parse::<GameEngine>().unwrap();
         assert_eq!(game_engine.get_result(), "25467389".to_string())
     }
 
     #[test_case(3=>8)]
     #[test_case(6=>7)]
     #[test_case(7=>3)]
-    fn ex23_get_cup_after_cup(cup: Cup) -> u8 {
+    fn ex23_get_cup_after_cup(cup: Cup) -> Cup {
         let game_engine = "389125467".parse::<GameEngine>().unwrap();
         game_engine.get_cup_after_cup(cup)
     }
