@@ -1,4 +1,5 @@
 pub mod ex1;
+pub mod ex7;
 pub mod ex10;
 pub mod ex11;
 pub mod ex12;
