@@ -25,3 +25,8 @@ criterion = "^0.3.5"
 name = "ex24benchmark"
 path = "benches/ex24_benchmark.rs"
 harness = false
+
+[[bench]]
+name = "ex25benchmark"
+path = "benches/ex25_benchmark.rs"
+harness = false
