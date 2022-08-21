@@ -2,6 +2,7 @@ use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 use fnv::FnvHashMap as HashMap;
 use lazy_regex::{regex, Lazy, Regex};
+use std::collections::VecDeque;
 use std::str::FromStr;
 
 pub struct Day7;
@@ -24,7 +25,7 @@ impl DaySolver for Day7 {
 }
 
 struct Rules {
-    body: HashMap<String, Vec<String>>,
+    body: HashMap<String, VecDeque<String>>,
 }
 
 impl FromStr for Rules {
@@ -33,12 +34,12 @@ impl FromStr for Rules {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re: &Lazy<Regex> = regex!(r"(\d+) (?P<color>\w+ \w+) bags?");
 
-        let body: HashMap<String, Vec<String>> = s
+        let body: HashMap<String, VecDeque<String>> = s
             .lines()
             .map(|line| {
                 let (bag, contained_bags) = line.split_once(" bags contain ").unwrap();
 
-                let mut value: Vec<String> = Vec::new();
+                let mut value: VecDeque<String> = VecDeque::new();
 
                 for i in contained_bags.split(", ") {
                     match re.captures(i) {
@@ -46,7 +47,7 @@ impl FromStr for Rules {
                             break;
                         },
                         Some(cap) => {
-                            value.push(cap["color"].to_string());
+                            value.push_back(cap["color"].to_string());
                         },
                     }
                 }
@@ -61,24 +62,22 @@ impl FromStr for Rules {
 
 impl Rules {
     fn contains_shiny_gold(&self, bag: &String) -> bool {
-        let mut queue = self.body.get(bag).unwrap().to_vec();
+        let mut queue = self.body.get(bag).unwrap().to_owned();
 
-        loop {
-            if queue.is_empty() {
-                return false;
+        while !queue.is_empty() {
+            if let Some(checked) = queue.pop_front() {
+                if checked == "shiny gold" {
+                    return true;
+                }
+
+                queue.append(&mut self.body.get(&checked).unwrap().to_owned());
             }
-
-            let checked = queue.remove(0);
-
-            if checked == *"shiny gold" {
-                return true;
-            }
-
-            queue.append(&mut self.body.get(&checked).unwrap().to_vec());
         }
+
+        false
     }
 
-    fn get_bags(&self) -> std::collections::hash_map::Keys<'_, String, Vec<String>> {
+    fn get_bags(&self) -> std::collections::hash_map::Keys<'_, String, VecDeque<String>> {
         self.body.keys()
     }
 }
