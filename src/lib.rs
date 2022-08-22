@@ -24,6 +24,8 @@ pub mod ex24;
 pub mod ex24pdo;
 pub mod ex25;
 pub mod ex25b;
+pub mod ex23;
+pub mod ex23b;
 pub mod ex3;
 pub mod ex4;
 pub mod ex5;
