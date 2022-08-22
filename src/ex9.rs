@@ -1,13 +1,19 @@
-use std::fs;
-use std::io::{self};
-use std::path::Path;
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
 
-fn get_data<P>(path: P) -> io::Result<String>
-where
-    P: AsRef<Path>,
-{
-    let contents = fs::read_to_string(path)?;
-    Ok(contents)
+pub struct Day9;
+
+impl DaySolver for Day9 {
+    type Output = u16;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_9", "data_files/ex9.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        match solve(_s, 5) {
+            SolveResult::NoInvalidElement => unreachable!(),
+            SolveResult::InvalidElement(element) => Ok(element)
+        }
+    }
 }
 
 fn is_sum_of_two(mut preamble: Vec<u16>, element: &u16) -> bool {
@@ -40,9 +46,9 @@ pub enum SolveResult {
     InvalidElement(u16),
 }
 
-pub fn solve(pattern: &str, preamble_size: usize) -> SolveResult {
+fn solve(pattern: &str, preamble_size: usize) -> SolveResult {
     let input: Vec<u16> = pattern
-        .split("\r\n")
+        .lines()
         .map(|f| f.parse::<u16>().unwrap())
         .collect();
     let res = input
@@ -55,20 +61,6 @@ pub fn solve(pattern: &str, preamble_size: usize) -> SolveResult {
         None => SolveResult::NoInvalidElement,
         Some(elem) => SolveResult::InvalidElement(*elem.1),
     }
-}
-
-pub fn run<P>(path: P) -> anyhow::Result<()>
-where
-    P: AsRef<Path>,
-{
-    let data = get_data(path)?;
-    match solve(data.as_str(), 5) {
-        SolveResult::InvalidElement(element) => {
-            println!("Lowest invalid number is is: {}", element)
-        },
-        SolveResult::NoInvalidElement => println!("Input does not have invalid element"),
-    };
-    Ok(())
 }
 
 #[cfg(test)]
@@ -87,10 +79,5 @@ mod tests {
     #[test_case(vec![1,2,3], &5 => true)]
     fn test_is_sum_of_two(preamble: Vec<u16>, element: &u16) -> bool {
         is_sum_of_two(preamble, element)
-    }
-
-    #[test]
-    fn test_ex9_run_no_file() {
-        assert!(run("aaa").is_err())
     }
 }

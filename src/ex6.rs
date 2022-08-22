@@ -1,14 +1,19 @@
 use std::collections::HashSet;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+pub struct Day6;
+
+impl DaySolver for Day6 {
+    type Output = usize;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_6", "data_files/ex6.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let res = count_answers2(_s)?;
+        Ok(res)
+    }
 }
 
 fn mapp_char(c: char) -> u16 {
@@ -56,25 +61,6 @@ pub fn count_answers4(pattern: &str) -> u32 {
         .sum::<u32>()
 }
 
-fn get_data() -> String {
-    "abc
-
-    a
-    b
-    c
-    
-    ab
-    ac
-    
-    a
-    a
-    a
-    a
-    
-    b"
-    .to_string()
-}
-
 pub fn count_answers3_bench(pattern: &str) -> usize {
     let mut mapper = 1;
     let mut counter: usize = 0;
@@ -102,16 +88,13 @@ pub fn count_answers3_bench(pattern: &str) -> usize {
     counter
 }
 
-pub fn count_answers3<P>(path: P) -> io::Result<usize>
-where
-    P: AsRef<Path>,
+pub fn count_answers3(input: &str) -> anyhow::Result<usize>
 {
     let mut mapper = 1;
     let mut counter: usize = 0;
     let mut questions: usize = 0;
 
-    for line in read_lines(path)? {
-        let line = line?;
+    for line in input.lines() {
         if line.is_empty() {
             counter += questions;
             mapper = 1;
@@ -157,15 +140,12 @@ pub fn count_answers2_bench(pattern: &str) -> usize {
     counter
 }
 
-pub fn count_answers2<P>(path: P) -> io::Result<usize>
-where
-    P: AsRef<Path>,
+pub fn count_answers2(input: &str) -> anyhow::Result<usize>
 {
     let mut questions: Vec<char> = Vec::new();
     let mut counter: usize = 0;
 
-    for line in read_lines(path)? {
-        let line = line?;
+    for line in input.lines() {
         if line.is_empty() {
             questions.sort_unstable();
             questions.dedup();
@@ -206,15 +186,12 @@ pub fn count_answers_bench(pattern: &str) -> usize {
     counter
 }
 
-pub fn count_answers<P>(path: P) -> io::Result<usize>
-where
-    P: AsRef<Path>,
+pub fn count_answers(input: &str) -> anyhow::Result<usize>
 {
     let mut questions: HashSet<char> = HashSet::new();
     let mut counter: usize = 0;
 
-    for line in read_lines(path)? {
-        let line = line?;
+    for line in input.lines() {
         if line.is_empty() {
             counter += questions.len();
             questions = HashSet::new();
@@ -230,35 +207,14 @@ where
     Ok(counter)
 }
 
-pub fn run<P>(path: P) -> io::Result<()>
-where
-    P: AsRef<Path>,
-{
-    let passports = count_answers2(path)?;
-    println!("{:?}", passports);
-
-    let passports = count_answers_bench(get_data().as_str());
-    println!("{:?}", passports);
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_ex4_run_no_file() {
-        assert!(run("aaa").is_err())
-    }
-
-    #[test]
-    fn test_run_file_exists() {
-        assert!(!run("data_files/ex6.txt").is_err())
-    }
+    use aoc_utils::read_to_string;
 
     #[test]
     fn test_count_answers() {
-        assert_eq!(count_answers("data_files/ex6.txt").unwrap(), 11)
+        let input = read_to_string("data_files/ex6.txt").unwrap();
+        assert_eq!(count_answers(&input).unwrap(), 11)
     }
 }

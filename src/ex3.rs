@@ -1,8 +1,21 @@
 use anyhow::Context;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
 use thiserror::Error;
+
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+pub struct Day3;
+
+impl DaySolver for Day3 {
+    type Output = u32;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_3", "data_files/ex3.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let res = count_trees(11, 11, 3, _s)?;
+        Ok(res)
+    }
+}
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum Ex3Error {
@@ -14,14 +27,6 @@ pub enum Ex3Error {
 
     #[error("to low number of lines in given file (expected {expected:?}, found {found:?})")]
     NotEnaughtLines { expected: usize, found: usize },
-}
-
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
 }
 
 fn process_line(line: &str, expexted_len: usize) -> Result<String, Ex3Error> {
@@ -40,23 +45,20 @@ fn process_line(line: &str, expexted_len: usize) -> Result<String, Ex3Error> {
     Ok(cuted.to_string())
 }
 
-fn count_trees<P>(
-    path: P,
+fn count_trees(
     board_width: usize,
     board_height: usize,
     step: usize,
+    input: &str
 ) -> anyhow::Result<u32>
-where
-    P: AsRef<Path>,
 {
     let mut index: usize = 0;
     let mut skip_to_line: usize = 0;
     let mut trees_num: u32 = 0;
     let mut curr_line: usize = 0;
 
-    for (line_num, line) in (read_lines(path)?).enumerate() {
-        let line = line?;
-        let p = process_line(&line, board_width)
+    for (line_num, line) in input.lines().enumerate() {
+        let p = process_line(line, board_width)
             .with_context(|| format!("line content: {} (line={})", line, line_num))?;
 
         curr_line = line_num % board_height;
@@ -90,14 +92,6 @@ where
     Ok(trees_num)
 }
 
-pub fn run<P>(path: P) -> anyhow::Result<()>
-where
-    P: AsRef<Path>,
-{
-    println!("couted trees: {}", count_trees(path, 11, 11, 3)?);
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,19 +110,21 @@ mod tests {
 
     #[test]
     fn test_count_trees_no_file() {
-        assert!(count_trees("aaa", 1, 1, 1).is_err())
+        assert!(count_trees(1, 1, 1, "aaa").is_err())
     }
 
     #[test]
     fn test_count_trees() {
+        use aoc_utils::read_to_string;
+        let input = read_to_string("data_files/ex3.txt").unwrap();
         assert_eq!(
-            count_trees("data_files/ex3_given_example.txt", 11, 11, 3).unwrap(),
+            count_trees(11, 11, 3, &input).unwrap(),
             7
         );
         assert_eq!(
-            count_trees("data_files/ex3_given_example.txt", 11, 11, 0).unwrap(),
+            count_trees(11, 11, 0, &input).unwrap(),
             3
         );
-        assert!(count_trees("data_files/ex3_given_example.txt", 11, 110, 0).is_err());
+        assert!(count_trees(11, 110, 0, &input).is_err());
     }
 }

@@ -1,9 +1,24 @@
 use lazy_regex::{regex, Lazy, Regex};
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
+
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+pub struct Day2;
+
+impl DaySolver for Day2 {
+    type Output = usize;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_2", "data_files/ex2.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+
+        let res = _s.lines().filter_map(|line| line.parse::<Password>().ok()).count();
+
+        Ok(res)
+    }
+}
 
 #[derive(PartialEq, Debug, Eq)]
 pub struct Password {
@@ -53,29 +68,6 @@ impl FromStr for Password {
     }
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
-pub fn run<P>(path: P) -> io::Result<()>
-where
-    P: AsRef<Path>,
-{
-    for line in read_lines(path)? {
-        let line = line?;
-        match line.parse::<Password>() {
-            Ok(p) => println!("{:?}: is_valid == {}", line, p.is_valid()),
-            Err(err) => eprintln! {"{:?} -> Error: {}", line, err},
-        }
-    }
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,15 +93,5 @@ mod tests {
     fn test_is_valid(s: &str) -> Result<bool, PasswordError> {
         let p1 = s.parse::<Password>()?;
         Ok(p1.is_valid())
-    }
-
-    #[test]
-    fn test_run_no_file() {
-        assert!(run("aaa").is_err())
-    }
-
-    #[test]
-    fn test_run_file_exists() {
-        assert!(run("data_files/ex2_passwords.txt").is_err() == false)
     }
 }

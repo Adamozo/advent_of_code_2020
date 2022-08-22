@@ -1,10 +1,22 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::{self};
-use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
+
+use aoc_utils::DayInfo;
+use aoc_utils::DaySolver;
+
+pub struct Day8;
+
+impl DaySolver for Day8 {
+    type Output = i16;
+
+    const INFO: DayInfo = DayInfo::with_day_and_file("day_8", "data_files/ex8.txt");
+
+    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let res = evaluate1(_s)?;
+        Ok(res)
+    }
+}
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum OperationError {
@@ -49,45 +61,29 @@ impl FromStr for Operation {
     }
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
+fn _load_instruction_num(input: &str, num: usize) -> anyhow::Result<String>
 {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
-fn load_instruction_num<P>(path: &P, num: usize) -> anyhow::Result<String>
-where
-    P: AsRef<Path>,
-{
-    for (line_num, line) in (read_lines(path)?).enumerate() {
+    for (line_num, line) in input.lines().enumerate() {
         if line_num == num {
-            let line = line?;
-            return Ok(line);
+            return Ok(line.to_owned());
         }
     }
 
     Err(anyhow::anyhow!("{}", OperationError::NoOperation))
 }
 
-fn load_instructions<P>(path: &P) -> anyhow::Result<HashMap<usize, Operation>>
-where
-    P: AsRef<Path>,
+fn load_instructions(input: &str) -> anyhow::Result<HashMap<usize, Operation>>
 {
     let mut operations: HashMap<usize, Operation> = HashMap::new();
 
-    for (line_num, line) in (read_lines(path)?).enumerate() {
-        let line = line?;
-        operations.insert(line_num, Operation::from_str(&line)?);
+    for (line_num, line) in input.lines().enumerate() {
+        operations.insert(line_num, Operation::from_str(line)?);
     }
 
     Ok(operations)
 }
 
-fn evaluate2<P>(path: &P) -> anyhow::Result<i16>
-where
-    P: AsRef<Path>,
+fn _evaluate2(input: &str) -> anyhow::Result<i16>
 {
     let mut accumulator: i16 = 0;
     let mut visited: Vec<usize> = Vec::new();
@@ -96,7 +92,7 @@ where
 
     while !visited.contains(&operation_num) {
         let op: Operation =
-            Operation::from_str(load_instruction_num(&path, operation_num)?.as_str())?;
+            Operation::from_str(_load_instruction_num(input, operation_num)?.as_str())?;
         visited.push(operation_num);
 
         match op {
@@ -117,11 +113,9 @@ where
     Ok(accumulator)
 }
 
-fn evaluate1<P>(path: &P) -> anyhow::Result<i16>
-where
-    P: AsRef<Path>,
+fn evaluate1(input: &str) -> anyhow::Result<i16>
 {
-    let operations = load_instructions(path)?;
+    let operations = load_instructions(input)?;
     let mut accumulator: i16 = 0;
     let mut visited: Vec<usize> = Vec::new();
 
@@ -148,19 +142,11 @@ where
     Ok(accumulator)
 }
 
-pub fn run<P>(path: P) -> anyhow::Result<()>
-where
-    P: AsRef<Path>,
-{
-    println!("evaluate1 accumulator: {}", evaluate1(&path)?);
-    println!("evaluate2 accumulator: {}", evaluate2(&path)?);
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use test_case::test_case;
+    use aoc_utils::read_to_string;
 
     #[test_case("nop +0" => Ok(Operation::Nop); "nop +0 ok")]
     #[test_case("acc +1" => Ok(Operation::Acc(1)); "acc +1 ok")]
@@ -173,30 +159,25 @@ mod tests {
         input.parse::<Operation>()
     }
 
-    #[test]
-    fn test_ex8_evaluate1() {
-        assert_eq!(evaluate1(&"data_files/ex8.txt").unwrap(), 5);
-        assert!(evaluate1(&"aaa").is_err())
-    }
-
-    #[test]
-    fn test_ex8_evaluate2() {
-        assert_eq!(evaluate2(&"data_files/ex8.txt").unwrap(), 5);
-        assert!(evaluate2(&"aaa").is_err())
-    }
-
-    #[test]
-    fn test_ex8_run_no_file() {
-        assert!(run("aaa").is_err())
-    }
 
     #[test]
     fn test_ex8_load_instruction_num_no_file() {
-        assert!(load_instruction_num(&"aaa", 1).is_err())
+        assert!(_load_instruction_num(&"aaa", 1).is_err())
     }
 
     #[test]
     fn test_ex8_load_instructions_no_file() {
         assert!(load_instructions(&"aaa").is_err())
+    }
+    #[test]
+    fn test_ex8_evaluate1() {
+        let input = read_to_string("data_files/ex8.txt").unwrap();
+        assert_eq!(evaluate1(&input).unwrap(), 5);
+    }
+
+    #[test]
+    fn test_ex8_evaluate2() {
+        let input = read_to_string("data_files/ex8.txt").unwrap();
+        assert_eq!(_evaluate2(&input).unwrap(), 5);
     }
 }
