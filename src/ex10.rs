@@ -27,7 +27,7 @@ where
     Ok(contents)
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum AdaptersConnectError {
     #[error("To big difference between adaper `{0}` and `{1}`")]
     ToBigDifference(u16, u16),

@@ -34,7 +34,7 @@ fn is_sum_of_two(mut preamble: Vec<u16>, element: &u16) -> bool {
     false
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum SolveResult {
     NoInvalidElement,
     InvalidElement(u16),

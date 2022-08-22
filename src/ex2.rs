@@ -5,7 +5,7 @@ use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Eq)]
 pub struct Password {
     min_number:   u16,
     max_number:   u16,
@@ -13,7 +13,7 @@ pub struct Password {
     passwd:       String,
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum PasswordError {
     #[error("unable to capture password")]
     CaptureFailed,

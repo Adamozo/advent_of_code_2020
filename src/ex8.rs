@@ -6,7 +6,7 @@ use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum OperationError {
     #[error("unable to parse operation")]
     ParseOperationError,

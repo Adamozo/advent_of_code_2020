@@ -4,7 +4,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum Ex3Error {
     #[error("not allowed char occured")]
     InvalidChar,
